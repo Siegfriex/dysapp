@@ -10,184 +10,85 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
     <script src="./includHTML.js" defer></script>
+    <script type="module" src="./scripts/app.js"></script>
+    <script type="module" src="./scripts/analyze.js"></script>
 </head>
 
 <body>
     <div class="wrap">
         <nav data-include-path="nav.html"></nav>
         <main class="Report_main">
-            <section class="Report">
+            <section class="Report" id="analysisReport">
                 <img src="./img/promptarraw.svg" alt="" class="promptArraw">
-                <p class="H1Text">깔끔하고 단정한 무드의 그래픽 작업물입니다.</p>
-                <span class="main_percent">
-                    <span class="per">주요 주제</span>
-                    <span class="per2">주요 주제</span>
-                    <span class="per3">주요 주제</span>
-                    <span class="per4">주요 주제</span>
+                <p class="H1Text" id="mainDescription">분석 결과를 불러오는 중...</p>
+                <span class="main_percent" id="mainTags">
+                    <!-- Dynamic tags will be inserted here -->
                 </span>
-                <div class="dataBox_wrap">
-                    <div class="dataBox">
+                <div class="dataBox_wrap" id="dataBoxContainer">
+                    <div class="dataBox" data-category="colorPalette">
                         <p class="H3Text">색상 팔레트</p>
-                        <div class="dataElement">
-                            <span class="color1">#9FBAF1</span>
-                            <div class="colorlayout">
-                                <span class="color2">#CBCBE7</span>
-                                <span class="color3">#EAF3B2</span>
-                                <span class="color4">#595880</span>
-                            </div>
-
+                        <div class="dataElement" id="colorPaletteContent">
+                            <!-- Dynamic color palette -->
                         </div>
-                        <p class="describtion">
-                            녹색 잔디와 분홍색 시계의 보색 대비가 매우 뚜렷하며 시각적 흥미를 유발합니다. 짙은 검은색 의상과 파란하늘의 조화가 초현실적인 분위기를 효과적으로 전달합니다.
-                        </p>
+                        <p class="describtion" id="colorPaletteDesc"></p>
                     </div>
 
-                    <div class="dataBox">
+                    <div class="dataBox" data-category="detectedObjects">
                         <p class="H3Text">감지된 객체</p>
-                        <div class="dataElement">
-                            <div class="eleText">도자기 화병</div>
-                            <div class="eleText">장식용 풀</div>
-                            <div class="eleText">비정형 도형</div>
+                        <div class="dataElement" id="detectedObjectsContent">
+                            <!-- Dynamic detected objects -->
                         </div>
-                        <p class="describtion">
-                            녹색 잔디와 분홍색 시계의 보색 대비가 매우 뚜렷하며 시각적 흥미를 유발합니다. 짙은 검은색 의상과 파란하늘의 조화가 초현실적인 분위기를 효과적으로 전달합니다.
-                        </p>
+                        <p class="describtion" id="detectedObjectsDesc"></p>
                     </div>
 
-                    <div class="dataBox">
+                    <div class="dataBox" data-category="usageSuggestions">
                         <p class="H3Text">활용 제안</p>
-                        <ul class="dataElement utilizeBox">
-                            <li class="utilize">홈 인테리어 쇼핑몰 웹사이트</li>
-                            <li class="utilize">제품 카탈로그 디자인</li>
-                            <li class="utilize">인테리어 블로그</li>
+                        <ul class="dataElement utilizeBox" id="usageSuggestionsContent">
+                            <!-- Dynamic usage suggestions -->
                         </ul>
-                        <p class="describtion">
-                            녹색 잔디와 분홍색 시계의 보색 대비가 매우 뚜렷하며 시각적 흥미를 유발합니다. 짙은 검은색 의상과 파란하늘의 조화가 초현실적인 분위기를 효과적으로 전달합니다.
-                        </p>
+                        <p class="describtion" id="usageSuggestionsDesc"></p>
                     </div>
 
-                    <div class="dataBox">
+                    <div class="dataBox" data-category="layout">
                         <p class="H3Text">레이아웃</p>
-                        <div class="dataElement layoutBox">
-                            <div class="oneEle">
-                                <p class="item">Count</p>
-                                <div class="value">8</div>
-                            </div>
-                            <div class="oneEle">
-                                <p class="item">Width</p>
-                                <div class="value">1920 px</div>
-                            </div>
-                            <div class="oneEle">
-                                <p class="item">Margin</p>
-                                <div class="value">120</div>
-                            </div>
-                            <div class="oneEle">
-                                <p class="item">Gutter</p>
-                                <div class="value">40</div>
-                            </div>
+                        <div class="dataElement layoutBox" id="layoutContent">
+                            <!-- Dynamic layout metrics -->
                         </div>
-                        <p class="describtion">
-                            중앙의 피사체가 시선을 강력하게 끌어당기며, 주변에 흩어진 시계들이 원근감을 형성하여 공간의 깊이를 만들어내고 있습니다. UI 레이아웃은 아니지만 시각적 구도의
-                            균형이 잡혀 있습니다.
-                        </p>
+                        <p class="describtion" id="layoutDesc"></p>
                     </div>
 
-                    <div class="dataBox">
+                    <div class="dataBox" data-category="typography">
                         <p class="H3Text">타이포그래피</p>
-                        <div class="dataElement typoData">
-                            <div class="textwrap">
-                                <p class="eng">Aa</p>
-                                <p class="font">Pretendard<br />83%</p>
-                                <p class="font2">Rubik<br />Nanum Godik<br />Eulyoo1945</p>
-                            </div>
-                            <span class="percent">
-                                <span class="perInside"></span>
-                            </span>
+                        <div class="dataElement typoData" id="typographyContent">
+                            <!-- Dynamic typography data -->
                         </div>
-                        <p class="describtion">
-                            이미지 내에 텍스트 요소가 전혀 존재하지 않아 타이포그래피 계층 구조나 가독성을 평가할 수 없습니다. 이는 순수 이미지 소스입니다.
-                        </p>
+                        <p class="describtion" id="typographyDesc"></p>
                     </div>
 
-                    <div class="dataBox langData">
+                    <div class="dataBox langData" data-category="language">
                         <p class="H3Text">사용 언어</p>
                         <p class="H3Text">인식된 텍스트</p>
-                        <div class="dataElement">
-                            <span class="lang">영어</span>
-                            <span class="text">Hello World, Hello Stranger!</span>
-                            <span class="lang">한국어</span>
-                            <span class="text">전시 관람 장소: 국립 현대 미술관</span>
+                        <div class="dataElement" id="languageContent">
+                            <!-- Dynamic language/text data -->
                         </div>
-                        <p class="describtion">
-                            유기적인 인체의 곡선과 자연 배경이 기하학적인 원형 시계들과 대비를 이루며 독특한 조형미를 보여줍니다. 기이하고 몽환적인 스타일이 일관되게 표현되었습니다.
-                        </p>
+                        <p class="describtion" id="languageDesc"></p>
                     </div>
-                    <div class="aiSuggestion">
+
+                    <div class="aiSuggestion" id="aiSuggestionBox">
                         <span><img class="star" src="./img/star.svg" alt=""></span>
                         <p class="H2Text">AI 추천</p>
-                        <p class="aiDescribtion">
-                            이 이미지는 전통적인 UI 디자인이 아닌 초현실주의적 아트워크 또는 앨범 커버 스타일의 그래픽입니다.
-                            웹사이트나 앱의 배경으로 활용할 경우, 강렬한 임팩트를 줄 수 있는 히어로 섹션에 적합합니다.
-                            타이포그래피를 추가한다면, 이미지의 기이함을 해치지 않도록 미니멀한 산세리프 폰트를 사용하거나, 반대로 매우 장식적인 폰트를 사용하여 키치한 느낌을 강조할 수
-                            있습니다.
-                            텍스트 배치 시 시계 오브젝트와의 겹침을 피하여 가독성을 확보해야 합니다.
-                        </p>
+                        <p class="aiDescribtion" id="aiRecommendation"></p>
                     </div>
                 </div>
             </section>
-            <section class="add_prompt">
-                <div class="bubble_ai">
-                    <!-- <img src="./img/bubble_2.svg" alt="" class="bubble2"> -->
-                    <div class="bubbleBox2">
-                        <p class="promptB_ai">
-                            업로드해주신 디자인은 이미 강렬한 임팩트와 명확한 컨셉을 가지고 있습니다. 하지만 사용자분께서 원하시는 방향이 **덜어냄의 미학**과 **고급 스튜디오
-                            스타일**이라면, 기존의 강렬함은 유지하되 **디테일의 밀도를 조정**하여 세련미를 더하는 과정이 필요합니다.
-                            현재의 디자인을 고급 스튜디오 포스터(High-end Studio Poster)스타일로 업그레이드하기 위한 4가지 구체적인 솔루션을 제안합니다.<br />
-                            <br />
-                            ###1.과감한 여백(Negative Space)확보 및 레이아웃 재구성<br />
-                            고급스러운 디자인의 핵심은 ‘채우기'가 아니라 ‘비우기'에 있습니다. 현재 디자인은 화면이 꽉 차있어 시선이 쉴 곳이 부족합니다.<br />
-                            <br />
-                            **솔루션:** 캔버스의 테두리 여백()을 현재보다 2배 이상 넓히십시오. 중앙의 찢어진 이미지와 텍스트 그룹을 전체적으로 축소하여, 붉은색 배경이 충분히 숨 쉴 수
-                            있게 만드십시오.<br />
-                            **효과:** 여백이 넓어지면 중앙의 오브제 (눈동자, 찢어진 종이)에 시선이 더욱 강력하게 집중되며, 갤러리 포스터와 같은 여유로운 분위기가 형성됩니다.<br />
-                        </p>
-                    </div>
-                    <div class="prompt_suggestion_Box">
-                        <ul class="sug_ul">
-                            <li class="sug_li">
-                                <img src="./img/s_icon.svg" alt="" class="sug_icon">
-                                <p class="sug_li_p">
-                                    따뜻한 분위기의 장단점을 명확하게 대비시켜 분석해줘.
-                                </p>
-                            </li>
-                        </ul>
-                        <ul class="sug_ul">
-                            <li class="sug_li">
-                                <img src="./img/s_icon.svg" alt="" class="sug_icon">
-                                <p class="sug_li_p">
-                                    따뜻한 분위기의 장단점을 명확하게 대비시켜 분석해줘.
-                                </p>
-                            </li>
-                        </ul>
-                        <ul class="sug_ul">
-                            <li class="sug_li">
-                                <img src="./img/s_icon.svg" alt="" class="sug_icon">
-                                <p class="sug_li_p">
-                                    따뜻한 분위기의 장단점을 명확하게 대비시켜 분석해줘.
-                                </p>
-                            </li>
-                        </ul>
-                    </div>
+            <section class="add_prompt" id="chatSection">
+                <div class="chat-container" id="chatContainer">
+                    <!-- Dynamic chat messages will be inserted here -->
                 </div>
-                <div class="bubble_user">
-                    <div class="bubbleBox1">
-                        <p class="promptB_user">
-                            이거 여기서 더 정돈되고 세련되게 그리고 깔끔하게 덜어내면서 고급 스튜디오 디자인 포스터같이 하려면 어떻게 개선해야해?
-                        </p>
-                    </div>
+                <div class="prompt_suggestion_Box" id="suggestionBox">
+                    <!-- Dynamic suggestions will be inserted here -->
                 </div>
-    </div>
-    </section>
+            </section>
     </main>
     <div class="detail_modal_bg" id="detail_modalBg">
         <div class="modal_box" id="modalBox">
@@ -224,9 +125,9 @@
             </span>
         </div>
     </div>
-    <div class="analyze_prompt_box">
-        <textarea name="text" class="analyze_prompt" placeholder="여기에 적으세요."></textarea>
-        <button type="submit" class="analyze_send_btn"><img src="./img/send.svg" alt=""></button>
+    <div class="analyze_prompt_box" id="chatInputBox">
+        <textarea name="text" class="analyze_prompt" id="chatInput" placeholder="디자인에 대해 질문해보세요..."></textarea>
+        <button type="submit" class="analyze_send_btn" id="chatSendBtn"><img src="./img/send.svg" alt=""></button>
     </div>
     <footer>
 

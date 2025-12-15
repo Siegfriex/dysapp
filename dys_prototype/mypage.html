@@ -9,12 +9,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
     <script src="./includHTML.js" defer></script>
+    <script type="module" src="./scripts/app.js"></script>
+    <script type="module" src="./scripts/mypage.js"></script>
 </head>
 <body>
     <div class="wrap">
         <nav data-include-path="nav.html"></nav>
-        <main>
-            
+        <main class="mypage_main">
+            <section class="profile-section"></section>
+            <section class="history-section">
+                <h3 class="section-title">분석 히스토리</h3>
+                <div class="history-grid"></div>
+                <button class="load-more-btn" style="display: none;">더 보기</button>
+            </section>
         </main>
     </div>
 </body>
