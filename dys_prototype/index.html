@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dys</title>
+    <link rel="stylesheet" href="./common.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    <script src="./includHTML.js" defer></script>
+</head>
+
+<body>
+    <div class="index_wrap">
+        <nav data-include-path="nav.html"></nav>
+        <main class="index_main">
+            <button class="promptMore">
+                <img src="./img/promptarraw.svg" alt="" class="promptArraw">
+            </button>
+            <img src="./img/logo_typo.svg" alt="" class="upload_logo">
+            <div class="uploadBox">
+                <div class="UBox_wrap">
+                    <img src="./img/fileicon.svg" alt="" class="U_icon">
+                    <p class="U_message">이미지 및 파일을 업로드하세요.</p>
+                    <p class="U_message2">
+                        파일을 드래그하거나 클릭하여 파일을 선택하세요.<br />
+                        지원 파일 형식: jpg, png, pdf
+                    </p>
+                </div>
+                <input type="file" name="file" class="upload_input" accept="image/png, image/jpeg">
+            </div>
+
+            <div class="prompt_box">
+                <textarea name="text" class="prompt" placeholder="여기에 적으세요."></textarea>
+                <button type="submit" class="send_btn" onclick="location.href='analyze.html'"><img src="./img/send.svg"
+                        alt=""></button>
+                <div class="recommand">
+                    <button class="reco1 reco">차분한</button>
+                    <button class="reco2 reco">따뜻한</button>
+                    <button class="reco3 reco">따스한</button>
+                </div>
+            </div>
+            <!-- <div class="expanded_box">
+                <p class="expanded_text">여기에 새로운 기능이 들어갑니다.</p>
+            </div> -->
+            <div id="promptModal" class="indexmodalBg" style="display:none;">
+                <div class="modal-content">
+                    <button id="closeModalBtn" class="modal-close-btn"><img src="./img/promptarraw.svg" alt=""></button>
+                    <!-- <p class="modal-message">여기에 모달 메시지나 내용을 입력하세요.</p> -->
+                    <div class="promptLi">
+                        <div class="promptLiTextWrap">
+                            <p class="promptLiH1">이미지 분석 (‘img.jpg’)</p>
+                        <p class="promptLiDate">2025-10-21 10:52</p>
+                        </div>
+                        <button class="viewResultBtn">결과보기</button>
+                    </div>
+                </div>
+              </div>
+        </main>
+    </div>
+
+
+
+    <script>
+
+// document.addEventListener("DOMContentLoaded", () => {
+//     const arrow = document.querySelector(".promptArraw");
+//     const promptBox = document.querySelector(".prompt_box");
+//     const recommand = document.querySelector(".recommand");
+
+//     arrow.addEventListener("click", () => {
+//         promptBox.classList.toggle("expanded");
+//         recommand.classList.toggle("hide");
+//     });
+// });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const promptMoreBtn = document.querySelector('.promptMore');
+  const promptModal = document.getElementById('promptModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+
+  if (!promptMoreBtn || !promptModal || !closeModalBtn) return;
+
+  // 모달 열기
+  promptMoreBtn.addEventListener('click', () => {
+    promptModal.style.display = 'flex';
+  });
+
+  // 모달 닫기 버튼
+  closeModalBtn.addEventListener('click', () => {
+    promptModal.style.display = 'none';
+  });
+
+  // 모달 외부 배경 클릭 시에도 닫기
+  promptModal.addEventListener('click', (e) => {
+    if (e.target === promptModal) {
+      promptModal.style.display = 'none';
+    }
+  });
+});
+
+
+
+
+
+
+// 프롬포트에 작성된 값을 가져와서 사용할 수 있는 코드입니다! 혹시 몰라 추가로 넣어둬요!
+// document.getElementById('sendBtn').addEventListener('click', () => {
+//     const text = document.querySelector('.prompt').value;
+//     console.log(text); // 여기서 서버로 보내거나, 화면에 표시하거나 등 원하는 작업 가능
+// });
+    </script>
+</body>
+
+</html>

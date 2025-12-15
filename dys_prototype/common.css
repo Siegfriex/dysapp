@@ -1,0 +1,2370 @@
+@charset "UTF-8";
+/*index.html에 선언된 스타일시트*/
+
+:root {
+    --ti-cursor-font-weight: .5px;
+    --ti-cursor-transform: translateX(-1.5rem);
+    --ti-cursor-color: rgba(0, 0, 0, .6);
+    --ti-cursor-line-height: 5px;
+    --ti-cursor-height: 5px;
+
+    /*공통수치 통합관리*/
+    --union-line-height: 1.35;
+
+    /*컬러 관리*/
+    --background: #ffffff;
+    /* --systemColor: #ffffff; */
+    /* --systemColorD: rgba(0, 0, 0, 0.85);
+    --systemColorLD: rgba(0, 0, 0, .6);
+    --sectorTitleColor: rgba(255, 255, 255, 0.8); */
+    --ivory: #FFFFF3;
+    --Gray: #DADADA;
+    --purpleGy: #E7E2FF;
+    --purpleGy2: #A8A8BF;
+    --purpleA: #F6F5F9;
+    --purpleB: #EBEBF8;
+    --purpleC: #7C7895;
+    --purpleMain: #875CFF;
+    --purpleD: #A483FF;
+    --purpleE: #BEA7FF;
+    --purpleF: #E0D5FF;
+    --purpleG: #FAFAFF;
+    --navy: #1B1233;
+
+    --text-xlarge: 3vw;
+    /* 6.000vw * 0.5625 */
+    --text-large: 1.8vw;
+    /* 4.650vw * 0.5625 */
+    --text-medium: 1.3vw;
+    --text-regular: 1.1vw;
+    --text-semi-medium: 1vw;
+    --text-small: 0.9vw;
+    --text-semi-small: 0.8vw;
+    --text-extra-small: 0.75vw;
+    --text-tiny: 0.7vw;
+}
+
+
+* {
+    font-family: 'Rubik', 'SUITE', 'sans-serif';
+    margin: 0;
+}
+
+.wrap {
+    position: relative;
+    margin-left: 4vw;
+}
+
+::-webkit-scrollbar {
+    /* display: none; */
+    width: 0.5vw;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/********************************navigation***************************/
+
+
+.layout {
+    /* position: relative; */
+    position: static !important;
+}
+
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 4vw;
+    height: 100vh;
+    background-color: #F6F5F9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar:hover {
+    background-color: var(--purpleB);
+}
+
+/*아래 3개는 호버할 경우 커지게 하는 건데,,,, 굳이 안 넣으려면 빼도 됨*/
+.sidebar img,
+.mypageIcon {
+    transition: transform 0.2s ease;
+}
+
+.sidebar img:hover,
+.mypageIcon:hover {
+    transform: scale(1.12);
+}
+
+.logo_ul img:hover {
+    transform: none;
+}
+
+.nav_ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sidebar li {
+    margin: 1vw 0;
+}
+
+.logo_ul {
+    margin-top: .7vw;
+}
+
+.nav_tab {
+    padding: .5vw 0;
+}
+
+/* 아래 고정 역할 */
+.nav_ul3 {
+    margin-top: auto;
+    /* flex 기준 맨 아래로 밀어내기 */
+    padding-bottom: 1vw;
+}
+
+.nav_ul3 button {
+    border: none;
+    margin: 1vw 0;
+}
+
+/* 마이페이지 아이콘 */
+.mypageIcon {
+    position: fixed;
+    /* layout-relative 대신 화면 규칙 적용 */
+    top: 1.5vw;
+    right: 2.3vw;
+    width: 2vw;
+    z-index: 20;
+}
+
+
+
+/*설정 박스*/
+/* 뭔가 오류가 있음... 확인 후 수정 예정 */
+/* div #settingsBox .settings-box{
+    left: 10vw;
+    bottom: 10vw;
+    display: block;
+} */
+
+.settings-box {
+    position: fixed;
+    bottom: auto;
+    top: auto;
+    left: auto;
+    /* sidebar 오른쪽 옆에 붙게 */
+    width: 10vw;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 0.8vw;
+    border-radius: 0.5vw;
+    box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.1);
+    display: none;
+    /* z-index: 99999999; */
+    z-index: 10;
+}
+
+.settings-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.settings-box li {
+    padding: 0.5vw 0;
+    font-size: 0.9vw;
+    cursor: pointer;
+}
+
+.settings-box li:hover {
+    background: #f3f3f3;
+}
+
+
+
+
+
+/***********************index****************************/
+
+
+main {
+    display: inline-flex;
+    /* padding: 5vw 5vw 0 4vw; */
+    /* height: 60vw; */
+    /* position: fixed; */
+    background: var(--background);
+    z-index: 1;
+    flex-direction: column;
+    /* align-items: center; */
+    z-index: 0;
+}
+
+.index_main {
+    display: inline-flex;
+    /* padding: 5vw 5vw 0 4vw; */
+    /* height: 60vw; */
+    /* position: fixed; */
+    background: var(--background);
+    z-index: 1;
+    flex-direction: column;
+    align-items: center;
+    z-index: 0;
+    width: 96vw;
+}
+
+.index_main .promptMore{
+    border: none;
+    background: none;
+    position: absolute;
+    top: 35.5vw;
+}
+
+.index_main .promptArraw {
+    /* position: absolute; */
+    /* margin-left: 43vw; */
+    /* top: 65vh; */
+    width: 1.3vw;
+}
+
+.index_wrap {
+    margin: 7vh 5vw 0 4vw;
+}
+
+.upload_logo {
+    display: inline-flex;
+    width: 8vw;
+}
+
+.uploadBox {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 4vw;
+    /* padding: 4.5vw 0 4vw 0; */
+    width: 43vw;
+    height: 37vh;
+    border-radius: 2vw;
+    border: 0.11vw #d1d1d1 dashed;
+    transition: border 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+    transform: scale(1);
+    /* background-image: linear-gradient(to right, black 33%, rgba(255,255,255,0) 0%);
+    background-position: bottom; 
+    background-size: 7px 2px;/*점선 간격 수정
+    background-repeat: repeat-x; */
+}
+
+.uploadBox:hover {
+    border: 0.11vw var(--purpleMain) dashed;
+    /* box-shadow: 0 0 2vw var(--purpleMain); */
+    box-shadow: 0 0 2vw #F0EBFF;
+    transform: scale(1.005);
+}
+
+.upload_input {
+    position: relative;
+    margin: -32.5vh 0 0 0;
+    padding: 11.5vh 0 9vh 0;
+    width: 43vw;
+    height: 17vh;
+    border-radius: 2vw;
+    text-align: center;
+    /* display: none; */
+    overflow: hidden;
+    color: transparent;
+    /* 기본 텍스트 숨김 */
+}
+
+
+.upload_input::file-selector-button {
+    display: none;
+}
+
+.UBox_wrap {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 8vh 0 4vw 0;
+}
+
+.U_icon {
+    width: 1.8vw;
+}
+
+.U_message {
+    margin: 1.9vw 0 1.5vw 0;
+    color: var(--purpleMain);
+    font-weight: 700;
+    /* font-size: var(--text-semi-medium); */
+    font-size: 1vw;
+}
+
+.U_message2 {
+    text-align: center;
+    color: var(--purpleGy2);
+    font-size: var(--text-semi-small);
+    line-height: 1.8vw;
+}
+
+.indexmodalBg {
+    position: fixed;
+    margin-top: -2vw;
+    top: 0; left: 0; right:0; bottom:0;
+    background: var(--background);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 120px; /* 이미지 상단과 비슷한 위치 조정 */
+    z-index: 2;
+  }
+  
+  .modal-content {
+    background: #EBEBF8;
+    display: inline-flex;
+    border-radius: 1vw;
+    width: 80vw;
+    height: 45vw;
+    /* max-width: 90%; */
+    padding: 2rem;
+    box-shadow: 0 0 .2vw .2vw rgba(160, 160, 160, 0.068);
+    font-family: 'SUITE', sans-serif;
+    color: #7C7895;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .modal-message {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .promptLi{
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 20vw;
+    height: 5vw;
+    background: var(--background);
+    border-radius: .5vw;
+    margin-top: 1vw;
+  }
+
+  .promptLiH1{
+    font-size: var(--text-small);
+    /* font-weight: 500; */
+  }
+  .promptLiDate{
+    font-size: var(--text-tiny);
+    margin-top: .5vw;
+  }
+
+.modal-close-btn{
+    border: none;
+    padding: 0 0 1vw 0;
+    background: none;
+}
+
+  .viewResultBtn {
+    padding: .5vw 1vw;
+    background: var(--purpleGy2);
+    border: none;
+    border-radius: .5vw;
+    color: var(--background);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: var(--text-extra-small);
+    margin-left: 1vw;
+  }
+  
+  .viewResultBtn:hover {
+    background-color: var(--purpleMain);
+    color: var(--background);
+  }
+  .modal-close-btn img{
+    transform: rotate(180deg);
+  }
+
+
+/***************************************프롬포트************************************/
+
+/* .prompt_box{
+    width: 30vw;
+    height: 10vw;
+    background-color: var(--purpleC);
+} */
+
+.prompt {
+    width: 56vw;
+    height: 10vw;
+    padding: 2vw;
+    /* color: var(--purpleC); */
+    color: #7C7895;
+    /* background-color: var(--purpleB); */
+    background-color: #EBEBF8;
+    border: none;
+    border-radius: 1.6vw;
+    /* font-size: var(--text-small); */
+    font-size: 0.9vw;
+    /* 아래는 박스 크기를 임의로 사용자가 수정할 수 있게 하는 건데, 그걸 막는 코드입니다. */
+    resize: none;
+    z-index: 3;
+}
+
+.prompt::placeholder {
+    color: #aaa;
+    margin-top: 0;
+}
+
+.prompt:focus {
+    outline: none;
+}
+
+.send_btn {
+    position: absolute;
+    background-color: var(--purpleGy2);
+    margin: 1.2vw 0 0 -3.2vw;
+    width: 2vw;
+    height: 2vw;
+    border: none;
+    border-radius: 3vw;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.send_btn img {
+    width: .6vw;
+}
+
+.recommand {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    position: absolute;
+    margin: 10.2vw 0 0 -58.2vw;
+}
+
+.reco {
+    /* width: 5vw; */
+    width: fit-content;
+    padding: .7vw 1.5vw;
+    margin-right: .8vw;
+    background-color: var(--background);
+    color: var(--purpleGy2);
+    font-size: var(--text-extra-small);
+    border: none;
+    border-radius: .7vw;
+}
+
+.reco:hover {
+    background-color: var(--purpleMain);
+    color: var(--background);
+}
+
+/* 클릭 전에는 숨겨둠 */
+/* .expanded_box {
+    display: none;
+    width: 56vw;
+    height: 20vh;
+    margin-top: 2vh;
+    background-color: #EBEBF8;
+    border-radius: 1.6vw;
+    padding: 2vw;
+    box-sizing: border-box;
+    font-size: 0.9vw;
+    color: #7C7895;
+} */
+
+/* 화살표 클릭 후 재조정할 크기 -> height확장 */
+/* .prompt.expanded {
+    height: 28vh; 
+} */
+
+
+
+
+
+/*************************분석 페이지******************************/
+.Report_main {
+    display: inline-flex;
+    /* display: flex; */
+    width: 95.5vw;
+    padding-bottom: 12vw;
+    /* width: 87vw; */
+    /* padding: 5vw 6vw 0 5vw; */
+    /* height: 60vw; */
+    /* position: fixed; */
+    background: var(--background);
+    /* z-index: 1; */
+    z-index: 0;
+    /* flex-direction: column;
+    align-items: center; */
+}
+
+.Report {
+    display: flex;
+    margin: 4vw auto;
+    margin-bottom: 1vw;
+    /* display: inline-flex; */
+    width: 87vw;
+    /* padding: 4vw 4vw 0 4vw; */
+    /* height: 60vw; */
+    /* position: fixed; */
+    background: var(--background);
+    z-index: 0;
+    flex-direction: column;
+    align-items: center;
+}
+
+.Report_main .promptArraw {
+    position: absolute;
+    /* margin-left: 43vw; */
+    top: 2vw;
+    width: 1.3vw;
+}
+
+.H1Text {
+    font-size: var(--text-regular);
+    /* margin-left: 34vw; */
+    margin-bottom: 2vw;
+    color: var(--purpleC);
+    font-weight: 600;
+}
+
+.main_percent {
+    /* margin-top: 1.6vw; */
+    height: 4vw;
+    margin-left: 1vw;
+    width: 86vw;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: flex-end;
+    /* padding: 0px 1vw; */
+    background: var(--background);
+    border-radius: 2vw;
+}
+
+.main_percent span {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-semi-small);
+    font-weight: 400;
+}
+
+.main_percent .per {
+    height: 4vw;
+    width: 50%;
+    background: var(--purpleMain);
+    border-top-left-radius: 2vw;
+    border-bottom-left-radius: 2vw;
+    color: var(--background);
+}
+
+.main_percent .per2 {
+    height: 4vw;
+    width: 25%;
+    background: var(--purpleD);
+}
+
+.main_percent .per3 {
+    height: 4vw;
+    width: 15%;
+    background: var(--purpleE);
+}
+
+.main_percent .per4 {
+    height: 4vw;
+    width: 10%;
+    background: var(--purpleF);
+    border-top-right-radius: 2vw;
+    border-bottom-right-radius: 2vw;
+}
+
+/* 살려줘............. */
+
+.dataBox_wrap {
+    margin-top: .3vw;
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.dataBox {
+    width: 26vw;
+    height: 12vw;
+    padding: 1vw;
+    margin: .8vw 0 0 .8vw;
+    background: var(--background);
+    border: .09vw solid var(--purpleB);
+    border-radius: 2vw;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.H3Text {
+    font-size: var(--text-semi-small);
+    font-weight: 500;
+    padding: .5vw .5vw .5vw 1vw;
+}
+
+.dataElement {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    height: 7.3vw;
+    width: 25vw;
+    margin: 0 auto;
+}
+
+.dataElement .colorlayout {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 13vw;
+}
+
+.dataElement span {
+    margin: .3vw 0 0 .3vw;
+    color: var(--background);
+    display: inline-flex;
+    align-items: flex-end;
+}
+
+.dataElement .color1 {
+    width: 11.4vw;
+    height: 6.1vw;
+    background-color: #9FBAF1;
+    border-radius: .8vw;
+    margin: .3vw 0 0 .3vw;
+    padding: 0 0 .7vw .7vw;
+    font-size: var(--text-small);
+}
+
+.dataElement .color2 {
+    width: 11.4vw;
+    height: 2.6vw;
+    background-color: #CBCBE7;
+    border-radius: .6vw;
+    padding: 0 0 .7vw .7vw;
+    font-size: var(--text-tiny);
+}
+
+.dataElement .color3 {
+    width: 5.2vw;
+    height: 2.6vw;
+    background-color: #EAF3B2;
+    border-radius: .6vw;
+    padding: 0 0 .7vw .7vw;
+    color: #010101;
+    font-size: var(--text-tiny);
+}
+
+.dataElement .color4 {
+    width: 5.2vw;
+    height: 2.6vw;
+    background-color: #595880;
+    border-radius: .6vw;
+    padding: 0 0 .7vw .7vw;
+    font-size: var(--text-tiny);
+}
+
+.describtion {
+    margin: 1vw 0 0 1vw;
+    font-size: var(--text-tiny);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    /* 원하는 줄 수로 설정 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.eleText {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: var(--text-extra-small);
+    background: var(--purpleG);
+    border: .08vw solid var(--purpleB);
+    border-radius: .6vw;
+    width: 31%;
+    height: 40%;
+    margin-top: .3vw;
+    margin-right: .7vw;
+}
+
+.eleText:last-child {
+    margin-right: 0;
+}
+
+.utilizeBox {
+    display: inline-flex;
+    flex-direction: column;
+    width: 22vw;
+    height: 5.5vw;
+    font-size: var(--text-extra-small);
+    line-height: 1.5vw;
+    padding: .7vw 0 0vw 2vw;
+    background: var(--purpleG);
+    border: .08vw solid var(--purpleB);
+    margin-top: .3vw;
+    margin-left: .8vw;
+    margin-bottom: .6vw;
+    border-radius: 1vw;
+}
+
+.layoutBox {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0 auto;
+}
+
+.oneEle {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 12vw;
+    margin-top: .7vw;
+    font-size: var(--text-extra-small);
+}
+
+.oneEle .item {
+    width: 3vw;
+    margin-left: .5vw;
+}
+
+.oneEle .value {
+    display: inline-flex;
+    align-items: center;
+    margin-left: .2vw;
+    padding-left: .7vw;
+    width: 6.3vw;
+    height: 2.3vw;
+    background: var(--purpleG);
+    border: .08vw solid var(--purpleB);
+    border-radius: .5vw;
+}
+
+.typoData {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.textwrap {
+    margin-top: 1vw;
+    width: 24vw;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
+.textwrap .eng {
+    font-size: var(--text-large);
+}
+
+.textwrap .font {
+    font-size: var(--text-small);
+    font-weight: 300;
+}
+
+.textwrap .font2 {
+    font-size: var(--text-extra-small);
+    color: var(--purpleGy2);
+    font-weight: 200;
+}
+
+.dataBox .percent {
+    margin-top: 1vw;
+    width: 25vw;
+    height: .7vw;
+    background: var(--Gray);
+    border-radius: 2vw;
+}
+
+.percent .perInside {
+    margin: 0;
+    width: 83%;
+    height: .7vw;
+    background: var(--purpleMain);
+    border-top-left-radius: 2vw;
+    border-bottom-left-radius: 2vw;
+}
+
+.langData {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start
+}
+
+.langData .dataElement {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: space-between;
+    height: 7.3vw;
+    width: 25vw;
+    margin: 0 auto;
+    font-size: var(--text-extra-small);
+    text-align: center;
+}
+
+.langData .lang {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 6vw;
+    height: 3vw;
+    background: var(--purpleG);
+    border: .08vw solid var(--purpleB);
+    border-radius: .5vw;
+    color: #000000;
+}
+
+.langData .text {
+    display: inline-flex;
+    align-items: center;
+    padding-left: 1vw;
+    width: 16.7vw;
+    height: 3vw;
+    background: var(--purpleG);
+    border: .08vw solid var(--purpleB);
+    border-radius: .5vw;
+    color: #000000;
+}
+
+.aiSuggestion {
+    width: 82vw;
+    /* height: 12vw; */
+    padding: 1vw 2vw 2vw 2vw;
+    margin: .8vw 0 0 .8vw;
+    background: #F9FAFC;
+    border: .09vw solid var(--purpleB);
+    border-radius: 2vw;
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.aiSuggestion .star {
+    width: 1vw;
+}
+
+.H2Text {
+    font-size: var(--text-semi-medium);
+    font-weight: 500;
+    padding: .5vw .5vw .5vw 1vw;
+}
+
+.aiDescribtion {
+    padding-top: .5vw;
+    font-size: var(--text-semi-small);
+    line-height: 1.3vw;
+}
+
+
+/* 분석 -> 프롬포트 추가 입력 */
+
+.add_prompt {
+    margin: 0 auto;
+    width: 86vw;
+}
+
+.bubble_ai {
+    margin-left: 2vw;
+}
+
+.bubbleBox2 {
+    display: inline-flex;
+    width: auto;
+    /* height: 20vw; */
+    background: var(--background);
+    border-radius: 1.5vw;
+    position: relative;
+    filter: drop-shadow(0 0 0.2vw var(--purpleMain));
+    /* z-index: 1; */
+    padding: 1.3vw;
+}
+
+.bubbleBox2::after {
+    content: "";
+    border-top: 4vw solid var(--background);
+    border-left: 3vw solid transparent;
+    border-right: 0vw solid transparent;
+    border-bottom: 0vw solid transparent;
+    position: absolute;
+    left: -1vw;
+    top: 0vw;
+    /* z-index: 0; */
+}
+
+.promptB_ai {
+    font-size: var(--text-semi-small);
+    line-height: 1.5vw;
+    z-index: 2;
+}
+
+.bubble_ai {
+    margin-left: 2vw;
+}
+
+
+
+
+.prompt_suggestion_Box {
+    display: inline-flex;
+    width: auto;
+    background-color: var(--purpleG);
+    color: var(--purpleC);
+    flex-direction: column;
+    padding: 1vw;
+    margin-top: 1vw;
+    min-width: 30vw;
+    /* padding-right: 5vw; */
+    border-radius: 1vw;
+}
+
+.sug_icon {
+    margin-right: 1vw;
+}
+
+.sug_ul {
+    margin: .1vw;
+}
+
+.sug_li {
+    display: inline-flex;
+    list-style: none;
+    font-size: var(--text-tiny);
+}
+
+
+
+.bubble_user {
+    position: absolute;
+    margin-top: 1vw;
+    right: 6vw;
+}
+
+.bubbleBox1 {
+    display: inline-flex;
+    width: auto;
+    /* height: 20vw; */
+    color: var(--background);
+    background: var(--purpleMain);
+    border-radius: 1vw;
+    position: relative;
+    /* z-index: 1; */
+    padding: 1.3vw;
+}
+
+.bubbleBox1::after {
+    content: "";
+    border-top: 2vw solid var(--purpleMain);
+    border-left: 0vw solid transparent;
+    border-right: 2.5vw solid transparent;
+    border-bottom: 0vw solid transparent;
+    position: absolute;
+    right: -1vw;
+    top: 0vw;
+    /* z-index: 0; */
+}
+
+.promptB_user {
+    font-size: var(--text-semi-small);
+    line-height: 1.5vw;
+    z-index: 2;
+}
+
+
+
+
+
+
+/* detail modal */
+#modalBox {
+    position: relative;
+}
+
+.modal_closeBtn {
+    position: absolute;
+    top: 1vw;
+    right: 1.5VW;
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--purpleMain);
+}
+
+
+
+
+/* 모달 배경 (처음에는 숨김) */
+.detail_modal_bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    /* 100% 뷰포트 너비 */
+    height: 100vh;
+    /* 100% 뷰포트 높이 */
+    background: rgba(0, 0, 0, 0.3);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+}
+
+/* 모달 박스 */
+.modal_box {
+    background: white;
+    width: 30vw;
+    padding: 3.5vw 3vw 3vw 3vw;
+    border-radius: 1.8vw;
+    box-shadow: 0 0 1vw rgba(0, 0, 0, 0.2);
+    display: inline-flex;
+    flex-direction: column;
+    max-height: calc(100vh - 8vw);
+    /* 뷰포트보다 커지면 스크롤 가능 */
+    overflow: auto;
+}
+
+.modal_h1 {
+    font-size: var(--text-large);
+    color: var(--purpleMain);
+    font-weight: 700;
+}
+
+.modal_p1 {
+    font-size: var(--text-extra-small);
+    color: #9FADBF;
+    margin-top: .5vw;
+}
+
+.modal_h2_box {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: .5vw;
+}
+
+.modal_h2 {
+    font-size: var(--text-small);
+    margin-left: .5vw;
+}
+
+.modal_p2 {
+    font-size: var(--text-semi-small);
+    background: var(--purpleG);
+    border: 0.1vw solid #F1F1F9;
+    padding: 1vw;
+    border-radius: .5vw;
+}
+
+.modal_p2_box {
+    display: inline-flex;
+}
+
+.modal_p2_box .modal_p2 {
+    margin-right: .5vw
+}
+
+.modal_p2_box .modal_p2:last-child {
+    margin-right: 0;
+}
+
+.modal_standard {
+    margin-top: 2vw;
+    margin-bottom: 1vw;
+}
+
+.modal_element {
+    margin-bottom: 1vw;
+}
+
+.modal_detail .modal_p2 {
+    line-height: 1.3vw;
+}
+
+/* 분석 페이지 프롬포트 */
+
+.analyze_prompt_box {
+    position: fixed;
+    display: inline-flex;
+    width: 88vw;
+    height: 4vw;
+    left: 4vw;
+    /* top:49vw; */
+    bottom: 3vh;
+    margin-left: 4vw;
+    align-items: center;
+    z-index: 3;
+}
+
+.analyze_prompt {
+    position: absolute;
+    /* left: 4vw;
+    top:49vw; */
+    /* bottom: 2vh; */
+    width: 86vw;
+    padding: 1.5vw 0 .5vw 2vw;
+    color: var(--purpleC);
+    /* color: #EBEBF8; */
+    /* background-color: var(--purpleB); */
+    background-color: #EBEBF8;
+    border: none;
+    border-radius: 2vw;
+    /* font-size: var(--text-small); */
+    font-size: 0.9vw;
+    /* 아래는 박스 크기를 임의로 사용자가 수정할 수 있게 하는 건데, 그걸 막는 코드입니다. */
+    resize: none;
+    z-index: 3;
+}
+
+.analyze_prompt::placeholder {
+    color: #aaa;
+    margin-top: 0;
+    background: transparent;
+    border: none;
+}
+
+.analyze_prompt:focus {
+    outline: none;
+}
+
+.analyze_send_btn {
+    /* position: fixed; */
+    /* position: relative; */
+    position: absolute;
+    background-color: var(--purpleGy2);
+    width: 2vw;
+    height: 2vw;
+    right: 2vw;
+    /* left: 92.5vw;
+    bottom: 6.8vh; */
+    border: none;
+    border-radius: 3vw;
+    /* display: inline-flex;
+    align-items: center;
+    justify-content: center; */
+    z-index: 5;
+}
+
+.analyze_send_btn img {
+    width: .6vw;
+}
+
+
+
+
+
+
+
+
+
+/* search Tab */
+.search_main {
+    display: inline-flex;
+    width: 95.5vw;
+}
+
+.search_box {
+    margin: 1vw 0 1vw 2vw;
+}
+
+.uploadIcon {
+    position: absolute;
+    top: 1.8vw;
+    right: 9.1vw;
+    border: none;
+}
+
+.uploadIcon img {
+    width: 1.4vw;
+}
+
+.searchIcon {
+    position: absolute;
+    width: 2.5vw;
+    top: 1.9vw;
+    right: 6.3vw;
+    border: none;
+}
+
+.searchIcon img {
+    width: 1.3vw;
+}
+
+.search {
+    width: 86vw;
+    padding: 1vw 0 .2vw 2vw;
+    /* height: 3vw; */
+    color: var(--purpleC);
+    /* color: #EBEBF8; */
+    /* background-color: var(--purpleB); */
+    background-color: #EBEBF8;
+    border: none;
+    border-radius: 2vw;
+    /* font-size: var(--text-small); */
+    font-size: 0.8vw;
+    /* 아래는 박스 크기를 임의로 사용자가 수정할 수 있게 하는 건데, 그걸 막는 코드입니다. */
+    resize: none;
+    z-index: 3;
+}
+
+.search::placeholder {
+    color: #aaa;
+    margin-top: 0;
+    background: transparent;
+    border: none;
+}
+
+.search:focus {
+    outline: none;
+}
+
+.searchfile1 {
+    margin-left: 2vw;
+}
+
+.category {
+    display: inline-flex;
+    /* width: 45.3vw; */
+}
+
+.filenameBox {
+    margin-top: 1.2vw;
+    display: inline-flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    margin-right: 0.01vw;
+    border: none;
+    background: none;
+    color: #C5C4D5;
+    border-top-left-radius: .5vw;
+    border-top-right-radius: .5vw;
+    box-shadow: 0 0 0.2vw var(--purpleB);
+}
+
+.filename {
+    font-size: var(--text-semi-small);
+    border-top-left-radius: .5vw;
+    border-top-right-radius: .5vw;
+    /* box-shadow: 0 0 0.2vw var(--purpleMain); */
+    width: 15vw;
+    padding-top: 1vw;
+    height: 2.3vw;
+    text-align: center;
+}
+
+/* JS로 제어 */
+.filenameBox.active {
+    box-shadow: 0 0 0.2vw var(--purpleMain);
+    color: var(--purpleMain);
+}
+
+.filenameBox.active .nothingㄹ {
+    opacity: 1;
+    z-index: 2;
+}
+
+.nothing {
+    position: absolute;
+    display: inline-flex;
+    top: 9vw;
+    /* margin-right: 0.1vw; */
+    /* left: 2vw; */
+    width: 15vw;
+    height: 1.5vw;
+    background-color: var(--background);
+    z-index: 3;
+    /* display: none; */
+    opacity: 0;
+}
+
+.filter {
+    position: absolute;
+    margin-top: 2vw;
+    right: 3.5vw;
+    border: none;
+    background: none;
+}
+
+.filterIcon {
+    width: 1.2vw;
+}
+
+
+.fileBox {
+    position: relative;
+    /* display: inline-flex; */
+    width: 89vw;
+    height: fit-content;
+    min-height: 45vw;
+    margin-top: -.5vw;
+    padding: 1.3vw 1vw 1vw 1vw;
+    background-color: #ffffff;
+    border-top-right-radius: 1vw;
+    box-shadow: 0 0vw 0.2vw var(--purpleMain);
+    z-index: 2;
+}
+
+.searchImgBox {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.searchImg {
+    margin: .6vw;
+    width: 13.6vw;
+    border-radius: 1vw;
+}
+
+.searchImg:hover+.imgOverlay {
+    opacity: 1;
+}
+
+/* 이미지 hover 시 z-index 상승 */
+.searchImg:hover {
+    position: relative;
+    z-index: 10;
+    transform: scale(1.04);
+}
+
+/* 좌우 버튼 노출 */
+.searchImg:hover .img-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 전체 화면 어둡게 하는 오버레이 */
+.page-dim {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.341);
+    z-index: 100;
+    /* opacity: 0; */
+    display: none;
+    /* transition: display 0.1s ease, pointer-events 0.2s ease; */
+}
+
+/* 특정 이미지 hover 시 전체 어둡게 */
+.searchImg:hover~.page-dim {
+    display: block;
+    pointer-events: auto;
+    z-index: 9;
+}
+
+.img-btn {
+    position: absolute;
+    top: 10vw;
+    border: none;
+    background: var(--purpleB);
+    width: 3vw;
+    height: 3vw;
+    border-radius: 2vw;
+    /* display: none; */
+    opacity: 0;
+    /* 기본적으로 숨김 */
+    pointer-events: none;
+    /* 클릭 이벤트 막기 */
+    transition: opacity 0.2s ease;
+    /* 부드러운 전환 */
+    z-index: 101;
+}
+
+.img-btn:hover {
+    background: var(--purpleMain);
+}
+
+.shareBtn {
+    left: 0vw;
+}
+
+.shareBtn:hover .shareIcon {
+    content: 'url(./img/shareHover)';
+}
+
+.downBtn {
+    left: 14vw;
+}
+
+.downBtn:hover .downIcon {
+    left: 14vw;
+}
+
+.downIcon {
+    margin-top: 0.3vw;
+}
+
+
+
+
+/* 서칭탭 - 클릭 후 디테일 페이지 */
+.fileBox_detail {
+    display: inline-flex;
+}
+
+.searchfile {
+    margin-left: 2vw;
+}
+
+.searchDetail {
+    width: 40vw;
+    height: 41.5vw;
+    /* height: 20vw; */
+    border: 0.1vw solid var(--purpleB);
+    border-radius: 1vw;
+    padding: 1vw;
+    margin-right: 1vw;
+    background: var(--purpleA);
+    display: inline-flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.searchImgBox_detail {
+    width: 45.5vw;
+    height: fit-content;
+    columns: 3;
+    column-gap: 1vw;
+}
+
+.searchImgBox_detail img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 1vw;
+    break-inside: avoid;
+    border-radius: 1vw;
+}
+
+
+
+
+
+
+
+
+.sec1 {
+    width: 20vw;
+    height: 41.5vw;
+    background: content-box;
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    border-radius: .5vw;
+    background: var(--background);
+}
+
+.selectImg {
+    width: 20vw;
+}
+
+.sec2wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-content: flex-start;
+    width: 19vw;
+    margin-left: 1vw;
+    height: 41.5vw;
+}
+
+.sec2 {
+    display: inline-flex;
+    justify-content: space-between;
+    width: 19vw;
+}
+
+.save {
+    border: none;
+    background: var(--purpleB);
+    border-radius: .5vw;
+    width: 3.5vw;
+    height: 2.5vw;
+    font-size: var(--text-semi-small);
+    font-weight: 700;
+    color: var(--purpleMain);
+}
+
+.sec2_1 {
+    display: inline-flex;
+    align-items: center;
+    max-height: 2.5vw;
+}
+
+.sec2_1 button {
+    background: none;
+    border: none;
+    width: 2vw;
+}
+
+.sec2_1 img {
+    width: 1.1vw;
+    margin: 0 .5vw;
+}
+
+
+
+.d_plus img {
+    width: 1.3vw;
+}
+
+.D_settings-box {
+    position: absolute;
+    bottom: auto;
+    top: 1vw;
+    left: 43vw;
+    display: none;
+    /* 기본적으로 숨김 */
+    padding: 1vw 35vw 47vw 0vw;
+}
+
+.D_settings-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    width: 11vw;
+    background: var(--purpleB);
+    /* border: 1px solid #ddd; */
+    padding: 0.4vw;
+    border-radius: 0.5vw;
+    box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    color: var(--purpleMain);
+}
+
+.D_settings-box li {
+    padding: 0.8vw 1.1vw;
+    font-size: 0.9vw;
+    cursor: pointer;
+    font-size: var(--text-semi-small);
+    font-weight: 500;
+}
+
+.D_settings-box li:hover {
+    background: var(--purpleMain);
+    color: var(--background);
+    border-radius: .5vw;
+}
+
+/* JavaScript가 이 클래스를 추가하면 보이게 됩니다. */
+.D_settings-box.show {
+    display: block;
+}
+
+
+
+.sec3,
+.sec4 {
+    width: 19vw;
+    background: var(--background);
+    border-radius: .5vw;
+    padding: 1.5vw;
+    margin-top: 1vw;
+}
+
+.sec3 {
+    min-height: 14vw;
+}
+
+.sec4 {
+    min-height: 17vw;
+}
+
+.sec_h1 {
+    font-size: var(--text-semi-small);
+    font-weight: 700;
+}
+
+.sec_p1 {
+    margin-top: 1.5vw;
+    font-size: var(--text-semi-small);
+    line-height: 1.4vw;
+}
+
+
+
+
+
+
+
+
+/* filter tab */
+
+.filter_main {
+    display: inline-flex;
+    width: 96vw;
+}
+
+.filterH1 {
+    color: var(--purpleMain);
+    font-size: var(--text-medium);
+    /* 기존 1.5rem → 약 1.05vw */
+    font-weight: 600;
+    text-align: center;
+    margin: 1.5vw;
+    /* 기존 25vw → 투톤 보정 */
+}
+
+.filterWrap {
+    width: 87.5vw;
+    height: 44vw;
+    margin: 1vw auto;
+    padding: 2vw;
+    background: var(--background);
+    box-shadow: 0 0 0.2vw var(--purpleMain);
+    border-radius: 1vw;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.filterBasic {
+    display: block;
+    /* opacity: 1;
+    visibility: visible; */
+}
+
+.filterBasic_wrap {
+    margin-top: 2vw;
+    display: flex;
+    justify-content: center;
+    /* height: 30vw;
+    align-items: center; */
+}
+
+
+.favoriteF,
+.myF,
+.saveF {
+    display: none;
+}
+
+.fC.active-btn {
+    background: #726ee1;
+    /* 활성화된 버튼의 배경색 */
+    color: white;
+    /* 활성화된 버튼의 글자색 */
+}
+
+.filterBasic.active-section,
+.favoriteF.active-section,
+.myF.active-section,
+.saveF.active-section {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 버튼 감싸는 영역 */
+.fC_BtnWrap {
+    display: flex;
+    gap: 1vw;
+    justify-content: center;
+    margin-bottom: 1vw;
+}
+
+.fC {
+    background: var(--purpleA);
+    border: none;
+    border-radius: 2vw;
+    padding: .6vw 2.2vw;
+    /* 0.8vw 1.8vw → 약간 비율 맞춤 */
+    color: var(--purpleMain);
+    cursor: pointer;
+    font-size: var(--text-semi-small);
+    font-weight: 500;
+    transition: background 0.3s ease;
+    white-space: nowrap;
+}
+
+.fC:hover {
+    background: var(--purpleMain);
+    color: var(--background);
+}
+
+.fC.active-btn {
+    background: #726ee1;
+    /* 활성화된 버튼의 배경색 */
+    color: white;
+}
+
+.finishFBtn {
+    position: absolute;
+    bottom: 5vw;
+    left: 44vw;
+}
+
+/* 색상 선택 영역 */
+.colorSelect {
+    margin: 0 2vw;
+}
+
+.filterp {
+    font-size: var(--text-semi-small);
+    /* 1.1rem → 약 0.77vw */
+    font-weight: 600;
+    margin-bottom: 1vw;
+    /* 10px → 0.7vw */
+    color: var(--purpleMain);
+}
+
+/* 색상 팔레트 그리드 */
+.colorPalette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5vw;
+    /* 0.8vw 유지 */
+    max-width: 10vw;
+    /* 16vw → 11.2vw (비율 조정) */
+}
+
+.colorPalette span {
+    width: 1.5vw;
+    /* 1.6vw → 1.12vw (약간 줄임) */
+    height: 1.5vw;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 0.1vw solid var(--Gray);
+    /* 0.1vw 유지 */
+    transition: border-color 0.3s ease;
+}
+
+.colorP1 {
+    background: #000000;
+}
+
+.colorP2 {
+    background: #666666;
+}
+
+.colorP3 {
+    background: #FFFFFF;
+    border: 1px solid #ccc;
+}
+
+.colorP4 {
+    background: #ee3c3c;
+}
+
+.colorP5 {
+    background: #e4762c;
+}
+
+.colorP6 {
+    background: #f3d557;
+}
+
+.colorP7 {
+    background: #82b54b;
+}
+
+.colorP8 {
+    background: #3b76d1;
+}
+
+.colorP9 {
+    background: #000080;
+}
+
+.colorP10 {
+    background: #540f7f;
+}
+
+.colorP11 {
+    background: #ed8cad;
+}
+
+.colorP12 {
+    background: #6b4c4f;
+}
+
+
+/* 선택된 색상 테두리 표시 */
+.colorPalette span.selected {
+    border: var(--purpleMain);
+}
+
+/* 자세히 보기 버튼 */
+.colorP_moreBtn {
+    margin: 1.5vw 2.5vw;
+    /* 0.8vw → 0.56vw */
+    display: inline-block;
+    padding: 0.42vw 0.98vw;
+    /* 0.6vw 1.4vw */
+    background: var(--purpleA);
+    color: var(--purpleMain);
+    border-radius: 0.5vw;
+    /* 1vw → 0.7vw */
+    font-size: var(--text-tiny);
+    /* 0.9rem → 0.63vw */
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease;
+}
+
+.colorP_moreBtn:hover {
+    background: var(--purpleMain);
+    color: var(--background);
+}
+
+/* 내 스타일 반영 섹션 */
+/* .mySty_reflect {
+    margin: 0 2vw;
+} */
+
+.mySty_reflect .filterp {
+    margin-bottom: 2vw;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 0.84vw;
+    /* 12px → 0.84vw */
+    /* max-width: 21vw; */
+    /* 300px → 21vw */
+    width: 18vw;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 18vw;
+    height: 0.42vw;
+    /* 6px → 0.42vw */
+    border-radius: 0.21vw;
+    /* 3px → 0.21vw */
+    background: #ddd;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1vw;
+    /* 20px → 1.4vw */
+    height: 1vw;
+    background: var(--purpleMain);
+    cursor: pointer;
+    border-radius: 50%;
+    margin-top: 0vw;
+    /* -7px → -0.49vw */
+    border: none;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+    width: 1.1vw;
+    height: 1.1vw;
+    background: var(--purpleMain);
+}
+
+.percent-label {
+    font-size: var(--text-tiny);
+    /* 0.9rem → 0.63vw */
+    color: #9999b8;
+    width: 2.8vw;
+    /* 40px → 2.8vw */
+    text-align: left;
+    user-select: none;
+}
+
+/* 연관 키워드 섹션 */
+.keyword {
+    max-width: 21vw;
+    margin: 0 2vw;
+}
+
+.keyword .filterp {
+    margin-bottom: 0.42vw;
+    /* 6px → 0.42vw */
+}
+
+.keywordAdd {
+    display: flex;
+    gap: 0.7vw;
+    /* 10px → 0.7vw */
+}
+
+.keywordAdd input {
+    flex-grow: 1;
+    height: 1.5vw;
+    width: 5vw;
+    /* 32px → 2.93vw */
+    font-size: 0.97vw;
+    /* 14px → 0.97vw */
+    padding: 0.35vw 0.2vw;
+    /* 5px 10px → vw */
+    margin: .5vw 0;
+    border: 0.07vw solid #ddd;
+    /* 1px → 0.07vw */
+    border-radius: 0.28vw;
+    /* 4px → 0.28vw */
+    color: #555;
+}
+
+.keywordAdd input:focus {
+    outline: none;
+}
+
+.keywordAdd button {
+    width: 1.62vw;
+    /* 36px → 2.62vw */
+    height: 1.62vw;
+    background: #eee;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.3vw;
+    /* 24px → 1.75vw */
+    color: #999;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+    margin-top: .8vw;
+}
+
+.keywordAdd button:hover {
+    background: var(--purpleMain);
+    color: white;
+}
+
+/* 키워드 리스트 */
+#keywordItems {
+    margin-top: 0.7vw;
+    /* 10px → 0.7vw */
+    list-style: none;
+    color: var(--purpleMain);
+    font-size: 1vw;
+    /* 16px 가량으로 살짝 키웠습니다. */
+    max-width: 21vw;
+}
+
+#keywordItems li {
+    margin-bottom: 0.28vw;
+    /* 4px → 0.28vw */
+}
+
+
+
+.favoriteF {
+    margin-top: 1vw;
+    padding: 1vw;
+    background-color: #f5f6ff;
+    border-radius: 1vw;
+    height: 15.1vw;
+}
+
+.favP1 {
+    display: flex;
+    justify-content: center;
+    color: var(--purpleMain);
+    font-size: var(--text-semi-medium);
+    font-weight: 500;
+    margin: 1vw 0 1vw 0;
+}
+
+.favP2 {
+    color: var(--purpleMain);
+    font-size: var(--text-small);
+    font-weight: 500;
+    margin: .5vw 1vw .5vw .7vw;
+}
+
+.favP3 {
+    color: var(--purpleGy2);
+    font-size: var(--text-semi-small);
+    font-weight: 400;
+    margin: 0vw 1vw 1vw .7vw;
+}
+
+.favP4 {
+    color: var(--purpleMain);
+    font-size: var(--text-small);
+    font-weight: 400;
+    margin: 0 2vw;
+}
+
+.fav-images {
+    display: flex;
+    justify-content: space-between;
+    gap: 1vw;
+}
+
+.fav-item {
+    background-color: white;
+    border-radius: 1vw;
+    padding: 1vw;
+    width: 40vw;
+    height: fit-content;
+    min-height: 12vw;
+    box-sizing: border-box;
+    text-align: left;
+    color: #726ee1;
+    font-weight: 600;
+    font-size: 1vw;
+    line-height: 1.3;
+}
+
+.fav-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.6vw;
+    margin-bottom: 0.6vw;
+}
+
+
+
+.filter-container {
+    background: #f9f7ff;
+    border-radius: 1.5rem;
+    padding: 2rem 3rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 탭 버튼 섹션 */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.tab {
+    padding: 0.8rem 1.6rem;
+    border-radius: 1.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background: #eeeafc;
+    color: #726ee1;
+    user-select: none;
+    transition: background-color 0.3s ease;
+}
+
+.tab.active {
+    background: #726ee1;
+    color: white;
+}
+
+/* 필터 리스트 영역 */
+.filter-list {
+    background: #F8F8FD;
+    border-radius: 1vw;
+    padding: 1vw 2vw;
+    display: flex;
+    flex-direction: column;
+    gap: .5vw;
+    max-height: 18vw;
+    overflow-y: auto;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: .5vw;
+    border-radius: 1vw;
+    /* padding: 1vw 2vw; */
+    font-size: 0.9rem;
+    color: #726ee1;
+    white-space: nowrap;
+    justify-content: flex-start
+}
+
+.filter-item .colors {
+    display: flex;
+    gap: 0.5vw;
+    width: 18vw;
+    align-items: center;
+}
+
+.filter-item .color-dot {
+    width: 1.5vw;
+    height: 1.5vw;
+    border-radius: 3vw;
+}
+
+.filter_leftSide {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 62vw;
+    border-radius: 1vw;
+    padding: 1.3vw 2vw;
+    background: var(--background);
+}
+
+/* 다양한 색상 예시 */
+.color-dark {
+    background: #555;
+}
+
+.color-brown {
+    background: #663300;
+}
+
+.color-yellow {
+    background: #FFCF0F;
+}
+
+.color-red {
+    background: #FF0000;
+}
+
+.color-orange {
+    background: #FF7500;
+}
+
+.color-blue {
+    background: #3E6BFF;
+}
+
+.color-pink {
+    background: #EA8AAD;
+}
+
+.color-green {
+    background: #2DCC70;
+}
+
+.color-purple {
+    background: #51489C;
+}
+
+.favP4 span {
+    padding: 0.5vw 1.2vw;
+    background: var(--background);
+    border-radius: 2vw;
+    /* font-size: 0.8vw; */
+    color: var(--purpleGy2);
+    border: 0.1vw solid var(--purpleGy);
+    margin-left: .5vw;
+}
+
+.myFH1{
+    font-size: var(--text-semi-medium);
+    font-weight: 500;
+    display: flex;
+    justify-content: center;
+    margin: .5vw 0;
+}
+
+.myFp1 {
+    width: 12vw;
+}
+
+.myFp2 {
+    width: 30vw;
+}
+
+.myFp3 {
+    color: var(--purpleMain);
+    font-size: var(--text-small);
+    font-weight: 400;
+    margin-right: 1.5vw;
+}
+
+/* 버튼 스타일 */
+.btn-load,
+.btn-delete {
+    cursor: pointer;
+    font-size: var(--text-small);
+    padding: 1.5vw 3vw;
+    border-radius: 1vw;
+    border: none;
+    background: var(--background);
+    color: var(--purpleMain);
+    /* border: 0.1vw solid var(--purpleGy); */
+    transition: background-color 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-load:hover {
+    background-color: var(--purpleMain);
+    color: var(--background);
+}
+
+.btn-delete {
+    padding: 1.5vw 0;
+    background-color: #fff;
+    width: 4vw;
+    height: 4vw;
+    font-size: 1.3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-delete:hover {
+    background-color: var(--purpleMain);
+    color: white;
+}
+
+.btn-delete:hover,
+.deleteIcon {
+    content: 'url(./img/delete_white)';
+}
+
+.deleteIcon {
+    width: 1.5vw;
+}
+
+/* 하단 인터렉티브 영역 */
+.interactive-area {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 2rem;
+}
+
+.colors-select {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.color-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.color-circle.selected {
+    border-color: #726ee1;
+}
+/* 
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    -webkit-appearance: none;
+    background: #eeeafc;
+} */
+
+
+
+.keywords-input {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 0.3rem 0.8rem;
+    margin-right: 0.4rem;
+}
+
+.btn-add-keyword {
+    background: #726ee1;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+}
+
+
+
+/* 모달 스타일 간단 예시 */
+/* .modal-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+} */
+.modal-background {
+    position: absolute;
+    top: 16vw;
+    left: 4vw;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.437);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    width: 88vw;
+    height: 18.2vw;
+}
+.modal {
+    /* position: fixed; */
+    position: relative;
+    /* margin-top: -5vw; */
+    width: 74vw;
+    background: var(--purpleA);
+    border-radius: 1vw;
+    padding: 2vw 3vw;
+    text-align: center;
+    /* width: 320px; */
+    font-size: var(--text-semi-medium);
+    font-weight: 500;
+}
+
+.modal button {
+    margin: 1rem 0.5rem 0 0.5rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+}
+
+.deleteModalP{
+    color: var(--purpleMain);
+}
+
+.btn-yes, .btn-no {
+    background-color: var(--background);
+    color: var(--purpleMain);
+}
+
+.btn-yes:hover, .btn-no:hover {
+    background-color: var(--purpleMain);
+    color: var(--background);
+}
+
+.filterDelete{
+    justify-content: center;
+    margin: 2vw 0 .5vw 0 ;
+}
