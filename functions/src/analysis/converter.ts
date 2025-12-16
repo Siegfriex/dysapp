@@ -46,6 +46,9 @@ export function llmToFirestore(
       cluttered: llm.layer1_performance.accessibility.cluttered,
     },
     diagnosisSummary: llm.layer1_performance.diagnosis_summary,
+    hierarchyAnalysis: llm.layer1_performance.hierarchy_analysis,
+    scanabilityAnalysis: llm.layer1_performance.scanability_analysis,
+    goalClarityAnalysis: llm.layer1_performance.goal_clarity_analysis,
   };
 
   const layer2Metrics: FormMetrics = {
@@ -53,12 +56,19 @@ export function llmToFirestore(
     visualBalance: llm.layer2_form.visual_balance,
     colorHarmony: llm.layer2_form.color_harmony,
     typographyQuality: llm.layer2_form.typography_quality,
+    gridAnalysis: llm.layer2_form.grid_analysis,
+    balanceAnalysis: llm.layer2_form.balance_analysis,
+    colorAnalysis: llm.layer2_form.color_analysis,
+    typographyAnalysis: llm.layer2_form.typography_analysis,
   };
 
   const layer3Metrics: CommunicativeMetrics = {
     trustVibe: llm.layer3_communicative.trust_vibe,
     engagementPotential: llm.layer3_communicative.engagement_potential,
     emotionalTone: llm.layer3_communicative.emotional_tone,
+    trustAnalysis: llm.layer3_communicative.trust_analysis,
+    engagementAnalysis: llm.layer3_communicative.engagement_analysis,
+    emotionalAnalysis: llm.layer3_communicative.emotional_analysis,
   };
 
   const colorPalette: ColorItem[] = llm.color_palette.map((c) => ({
@@ -84,6 +94,9 @@ export function llmToFirestore(
     detectedKeywords: llm.detected_keywords,
     ragSearchQueries: llm.rag_search_queries,
     nextActions: llm.next_actions,
+    strengths: llm.strengths,
+    weaknesses: llm.weaknesses,
+    overallAnalysis: llm.overall_analysis,
     embeddingModel: EMBEDDING_MODEL,
     embeddingDim: EMBEDDING_DIM,
     embeddingVersion: EMBEDDING_VERSION,
@@ -214,6 +227,9 @@ export function validateLLMResponse(data: unknown): data is DesignAnalysisResult
     "color_palette",
     "detected_keywords",
     "next_actions",
+    "strengths",
+    "weaknesses",
+    "overall_analysis",
     "rag_search_queries",
   ];
 
@@ -263,17 +279,33 @@ export function sanitizeLLMResponse(data: DesignAnalysisResultLLM): DesignAnalys
       hierarchy_score: clamp(data.layer1_performance.hierarchy_score),
       scanability_score: clamp(data.layer1_performance.scanability_score),
       goal_clarity_score: clamp(data.layer1_performance.goal_clarity_score),
+      hierarchy_analysis: data.layer1_performance.hierarchy_analysis,
+      scanability_analysis: data.layer1_performance.scanability_analysis,
+      goal_clarity_analysis: data.layer1_performance.goal_clarity_analysis,
     },
     layer2_form: {
       grid_consistency: clamp(data.layer2_form.grid_consistency),
       visual_balance: clamp(data.layer2_form.visual_balance),
       color_harmony: clamp(data.layer2_form.color_harmony),
       typography_quality: clamp(data.layer2_form.typography_quality),
+      grid_analysis: data.layer2_form.grid_analysis,
+      balance_analysis: data.layer2_form.balance_analysis,
+      color_analysis: data.layer2_form.color_analysis,
+      typography_analysis: data.layer2_form.typography_analysis,
+    },
+    layer3_communicative: {
+      ...data.layer3_communicative,
+      trust_analysis: data.layer3_communicative.trust_analysis,
+      engagement_analysis: data.layer3_communicative.engagement_analysis,
+      emotional_analysis: data.layer3_communicative.emotional_analysis,
     },
     // Limit array lengths
     color_palette: data.color_palette.slice(0, 5),
     detected_keywords: data.detected_keywords.slice(0, 20),
-    next_actions: data.next_actions.slice(0, 5),
+    next_actions: data.next_actions.slice(0, 7), // Increased from 5 to 7
+    strengths: data.strengths.slice(0, 5),
+    weaknesses: data.weaknesses.slice(0, 5),
+    overall_analysis: data.overall_analysis,
     rag_search_queries: data.rag_search_queries.slice(0, 5),
   };
 }

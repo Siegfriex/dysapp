@@ -9,10 +9,10 @@
 // ============================================================================
 
 /** Vision model for design analysis */
-export const VISION_MODEL = "gemini-2.0-flash";
+export const VISION_MODEL = "gemini-3-pro-preview";
 
 /** Chat model for AI mentor */
-export const CHAT_MODEL = "gemini-2.0-flash";
+export const CHAT_MODEL = "gemini-3-pro-preview";
 
 /** Embedding model for vector search */
 export const EMBEDDING_MODEL = "multimodalembedding@001";

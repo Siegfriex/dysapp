@@ -52,10 +52,22 @@ export const DESIGN_ANALYSIS_SCHEMA = {
         },
         diagnosis_summary: {
           type: SchemaType.STRING,
-          description: "One sentence structural diagnosis in Korean",
+          description: "Comprehensive structural diagnosis in Korean (3-5 sentences). Must include specific issues, their impact, and why they matter. Be detailed and insightful.",
+        },
+        hierarchy_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of visual hierarchy in Korean (2-3 sentences). Explain what works well, what doesn't, and specific visual elements that create or break hierarchy.",
+        },
+        scanability_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of information scanability in Korean (2-3 sentences). Explain how information is grouped, visual flow, and ease of finding key information.",
+        },
+        goal_clarity_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of goal clarity in Korean (2-3 sentences). Explain how clear the purpose is, what makes it clear/unclear, and specific elements that help or hinder understanding.",
         },
       },
-      required: ["hierarchy_score", "scanability_score", "goal_clarity_score", "accessibility", "diagnosis_summary"],
+      required: ["hierarchy_score", "scanability_score", "goal_clarity_score", "accessibility", "diagnosis_summary", "hierarchy_analysis", "scanability_analysis", "goal_clarity_analysis"],
     },
     layer2_form: {
       type: SchemaType.OBJECT,
@@ -76,8 +88,24 @@ export const DESIGN_ANALYSIS_SCHEMA = {
           type: SchemaType.INTEGER,
           description: "Font choice and spacing quality score (0-100)",
         },
+        grid_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of grid consistency in Korean (2-3 sentences). Explain alignment issues, grid system usage, and visual organization.",
+        },
+        balance_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of visual balance in Korean (2-3 sentences). Explain weight distribution, symmetry/asymmetry, and compositional balance.",
+        },
+        color_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of color harmony in Korean (2-3 sentences). Explain color relationships, harmony principles used, and emotional impact of color choices.",
+        },
+        typography_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of typography quality in Korean (2-3 sentences). Explain font choices, hierarchy, readability, and typographic principles.",
+        },
       },
-      required: ["grid_consistency", "visual_balance", "color_harmony", "typography_quality"],
+      required: ["grid_consistency", "visual_balance", "color_harmony", "typography_quality", "grid_analysis", "balance_analysis", "color_analysis", "typography_analysis"],
     },
     layer3_communicative: {
       type: SchemaType.OBJECT,
@@ -97,8 +125,20 @@ export const DESIGN_ANALYSIS_SCHEMA = {
           enum: ["Calm", "Energetic", "Serious", "Playful", "Minimal"],
           description: "Overall emotional atmosphere",
         },
+        trust_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of trust and professionalism in Korean (2-3 sentences). Explain what creates or undermines trust, visual cues, and professional impression.",
+        },
+        engagement_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of engagement potential in Korean (2-3 sentences). Explain call-to-action effectiveness, visual hooks, and elements that encourage interaction.",
+        },
+        emotional_analysis: {
+          type: SchemaType.STRING,
+          description: "Detailed analysis of emotional tone in Korean (2-3 sentences). Explain how the design conveys emotion, mood, and atmosphere through visual elements.",
+        },
       },
-      required: ["trust_vibe", "engagement_potential", "emotional_tone"],
+      required: ["trust_vibe", "engagement_potential", "emotional_tone", "trust_analysis", "engagement_analysis", "emotional_analysis"],
     },
     overall_score: {
       type: SchemaType.INTEGER,
@@ -139,7 +179,21 @@ export const DESIGN_ANALYSIS_SCHEMA = {
     next_actions: {
       type: SchemaType.ARRAY,
       items: { type: SchemaType.STRING },
-      description: "Top 3 specific, actionable improvement suggestions in Korean",
+      description: "Specific, actionable improvement suggestions in Korean (5-7 items). Each should be detailed, concrete, and include why it matters. Format: 'What to do' + 'How to do it' + 'Why it helps'",
+    },
+    strengths: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "Design strengths and what works well in Korean (3-5 items). Be specific about visual elements, principles, and effective choices.",
+    },
+    weaknesses: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: "Design weaknesses and areas for improvement in Korean (3-5 items). Be specific about issues, their impact, and why they matter.",
+    },
+    overall_analysis: {
+      type: SchemaType.STRING,
+      description: "Comprehensive overall analysis in Korean (5-7 sentences). Must include: summary of key findings, major strengths and weaknesses, design quality assessment, target audience fit, and overall impression. Be insightful and professional.",
     },
     rag_search_queries: {
       type: SchemaType.ARRAY,
@@ -157,6 +211,9 @@ export const DESIGN_ANALYSIS_SCHEMA = {
     "color_palette",
     "detected_keywords",
     "next_actions",
+    "strengths",
+    "weaknesses",
+    "overall_analysis",
     "rag_search_queries",
   ],
 };
@@ -180,7 +237,10 @@ Evaluates functional effectiveness:
 - scanability_score: Information grouping and scan speed - Can users quickly find what they need? (0-100)
 - goal_clarity_score: Topic/action recognition - Is the purpose immediately clear? (0-100)
 - accessibility: Check for low_contrast (WCAG AA failure), tiny_text (<12px), cluttered (information overload)
-- diagnosis_summary: One sentence diagnosis of structural issues (Korean if applicable)
+- diagnosis_summary: Comprehensive structural diagnosis (3-5 sentences in Korean). Must include specific issues, their impact, and why they matter. Be detailed and insightful.
+- hierarchy_analysis: Detailed analysis of visual hierarchy (2-3 sentences in Korean). Explain what works well, what doesn't, and specific visual elements that create or break hierarchy.
+- scanability_analysis: Detailed analysis of information scanability (2-3 sentences in Korean). Explain how information is grouped, visual flow, and ease of finding key information.
+- goal_clarity_analysis: Detailed analysis of goal clarity (2-3 sentences in Korean). Explain how clear the purpose is, what makes it clear/unclear, and specific elements that help or hinder understanding.
 
 **Layer 2: Aesthetic & Form (Weight: 30%)**
 Evaluates visual quality:
@@ -188,18 +248,40 @@ Evaluates visual quality:
 - visual_balance: Geometric equilibrium - Is weight distributed properly? (0-100)
 - color_harmony: Color theory adherence - Do colors work well together? (0-100)
 - typography_quality: Font choice, pairing, spacing quality (0-100)
+- grid_analysis: Detailed analysis of grid consistency (2-3 sentences in Korean). Explain alignment issues, grid system usage, and visual organization.
+- balance_analysis: Detailed analysis of visual balance (2-3 sentences in Korean). Explain weight distribution, symmetry/asymmetry, and compositional balance.
+- color_analysis: Detailed analysis of color harmony (2-3 sentences in Korean). Explain color relationships, harmony principles used, and emotional impact of color choices.
+- typography_analysis: Detailed analysis of typography quality (2-3 sentences in Korean). Explain font choices, hierarchy, readability, and typographic principles.
 
 **Layer 3: Communicative Impact (Weight: 20%)**
 Evaluates impression and engagement:
 - trust_vibe: Does it look professional? (High/Medium/Low)
 - engagement_potential: Will users take action? (High/Medium/Low)
 - emotional_tone: Overall mood (Calm/Energetic/Serious/Playful/Minimal)
+- trust_analysis: Detailed analysis of trust and professionalism (2-3 sentences in Korean). Explain what creates or undermines trust, visual cues, and professional impression.
+- engagement_analysis: Detailed analysis of engagement potential (2-3 sentences in Korean). Explain call-to-action effectiveness, visual hooks, and elements that encourage interaction.
+- emotional_analysis: Detailed analysis of emotional tone (2-3 sentences in Korean). Explain how the design conveys emotion, mood, and atmosphere through visual elements.
 
 **Scoring Guidelines:**
 1. Average good professional work should score around 70-75
 2. Don't give 90+ scores easily - reserve for exceptional work
-3. Be specific in diagnosis_summary - point to exact issues
-4. next_actions must be concrete and actionable (e.g., "헤드라인 크기를 30% 키우고 본문과의 대비를 강화하세요")
+3. Be specific and detailed in all analysis fields - point to exact visual elements, explain why they work or don't work
+4. Provide insightful, professional analysis that helps designers understand both strengths and weaknesses
+5. Use design terminology and principles (e.g., Gestalt principles, color theory, typography rules)
+6. Be concrete and specific - avoid vague statements
+
+**Analysis Quality Requirements:**
+- All analysis fields must be detailed, insightful, and professional
+- Explain the "why" behind scores, not just the "what"
+- Reference specific visual elements in the design
+- Use design principles and theory to support your analysis
+- Be constructive - explain how improvements would help
+- diagnosis_summary: 3-5 sentences covering major structural issues, their impact, and implications
+- Each metric analysis: 2-3 sentences explaining what works/doesn't work and why
+- overall_analysis: 5-7 sentences providing comprehensive assessment including key findings, strengths, weaknesses, quality assessment, target audience fit, and overall impression
+- strengths: 3-5 specific items about what works well and why
+- weaknesses: 3-5 specific items about issues, their impact, and why they matter
+- next_actions: 5-7 detailed, actionable suggestions in format: "What to do" + "How to do it" + "Why it helps"
 
 **fix_scope Decision Rules:**
 - "StructureRebuild" if:
@@ -214,10 +296,14 @@ Evaluates impression and engagement:
 **Output Rules:**
 1. Return ONLY valid JSON - no markdown, no explanatory text
 2. All scores must be integers 0-100
-3. color_palette: Extract 3-5 dominant colors
-4. next_actions: Provide exactly 3 specific improvement suggestions in Korean
-5. rag_search_queries: Suggest 3-5 design principle search terms
-6. Korean context: diagnosis_summary and next_actions should be in Korean
+3. color_palette: Extract 3-5 dominant colors with accurate usage ratios
+4. next_actions: Provide 5-7 detailed, actionable improvement suggestions in Korean. Each must include: what to do, how to do it, and why it helps.
+5. strengths: Provide 3-5 specific strengths in Korean, explaining what works well and why
+6. weaknesses: Provide 3-5 specific weaknesses in Korean, explaining issues, their impact, and why they matter
+7. overall_analysis: Provide comprehensive 5-7 sentence analysis in Korean covering key findings, strengths, weaknesses, quality assessment, target audience fit, and overall impression
+8. All analysis fields must be in Korean and be detailed, insightful, and professional
+9. rag_search_queries: Suggest 3-5 design principle search terms
+10. Be thorough - this is a professional design critique report, not a brief summary
 
 **Special Cases:**
 - If no text is present, evaluate typography_quality based on potential text placement

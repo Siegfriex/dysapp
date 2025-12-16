@@ -74,12 +74,9 @@ async function uploadToStorage(
     },
   });
 
-  // Make file publicly readable (for frontend access)
-  await file.makePublic();
-
-  // Return public URL instead of signed URL
-  // This avoids the need for iam.serviceAccounts.signBlob permission
-  const publicUrl = `https://storage.googleapis.com/${STORAGE_BUCKET}/${filePath}`;
+  // Generate public URL (Storage rules now allow all access in test mode)
+  // Format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?alt=media
+  const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodeURIComponent(filePath)}?alt=media`;
   
   return publicUrl;
 }
@@ -247,12 +244,19 @@ export async function analyzeDesignHandler(
           cluttered: llmResult.layer1_performance.accessibility.cluttered,
         },
         diagnosisSummary: llmResult.layer1_performance.diagnosis_summary,
+        hierarchyAnalysis: llmResult.layer1_performance.hierarchy_analysis,
+        scanabilityAnalysis: llmResult.layer1_performance.scanability_analysis,
+        goalClarityAnalysis: llmResult.layer1_performance.goal_clarity_analysis,
       },
       {
         gridConsistency: llmResult.layer2_form.grid_consistency,
         visualBalance: llmResult.layer2_form.visual_balance,
         colorHarmony: llmResult.layer2_form.color_harmony,
         typographyQuality: llmResult.layer2_form.typography_quality,
+        gridAnalysis: llmResult.layer2_form.grid_analysis,
+        balanceAnalysis: llmResult.layer2_form.balance_analysis,
+        colorAnalysis: llmResult.layer2_form.color_analysis,
+        typographyAnalysis: llmResult.layer2_form.typography_analysis,
       }
     );
 
@@ -309,12 +313,19 @@ export async function analyzeDesignHandler(
           cluttered: finalLLMResult.layer1_performance.accessibility.cluttered,
         },
         diagnosisSummary: finalLLMResult.layer1_performance.diagnosis_summary,
+        hierarchyAnalysis: finalLLMResult.layer1_performance.hierarchy_analysis,
+        scanabilityAnalysis: finalLLMResult.layer1_performance.scanability_analysis,
+        goalClarityAnalysis: finalLLMResult.layer1_performance.goal_clarity_analysis,
       },
       {
         gridConsistency: finalLLMResult.layer2_form.grid_consistency,
         visualBalance: finalLLMResult.layer2_form.visual_balance,
         colorHarmony: finalLLMResult.layer2_form.color_harmony,
         typographyQuality: finalLLMResult.layer2_form.typography_quality,
+        gridAnalysis: finalLLMResult.layer2_form.grid_analysis,
+        balanceAnalysis: finalLLMResult.layer2_form.balance_analysis,
+        colorAnalysis: finalLLMResult.layer2_form.color_analysis,
+        typographyAnalysis: finalLLMResult.layer2_form.typography_analysis,
       },
       fixScopeValidation.fixScope
     );
@@ -338,17 +349,27 @@ export async function analyzeDesignHandler(
           cluttered: finalLLMResult.layer1_performance.accessibility.cluttered,
         },
         diagnosisSummary: finalLLMResult.layer1_performance.diagnosis_summary,
+        hierarchyAnalysis: finalLLMResult.layer1_performance.hierarchy_analysis,
+        scanabilityAnalysis: finalLLMResult.layer1_performance.scanability_analysis,
+        goalClarityAnalysis: finalLLMResult.layer1_performance.goal_clarity_analysis,
       },
       layer2Metrics: {
         gridConsistency: finalLLMResult.layer2_form.grid_consistency,
         visualBalance: finalLLMResult.layer2_form.visual_balance,
         colorHarmony: finalLLMResult.layer2_form.color_harmony,
         typographyQuality: finalLLMResult.layer2_form.typography_quality,
+        gridAnalysis: finalLLMResult.layer2_form.grid_analysis,
+        balanceAnalysis: finalLLMResult.layer2_form.balance_analysis,
+        colorAnalysis: finalLLMResult.layer2_form.color_analysis,
+        typographyAnalysis: finalLLMResult.layer2_form.typography_analysis,
       },
       layer3Metrics: {
         trustVibe: finalLLMResult.layer3_communicative.trust_vibe,
         engagementPotential: finalLLMResult.layer3_communicative.engagement_potential,
         emotionalTone: finalLLMResult.layer3_communicative.emotional_tone,
+        trustAnalysis: finalLLMResult.layer3_communicative.trust_analysis,
+        engagementAnalysis: finalLLMResult.layer3_communicative.engagement_analysis,
+        emotionalAnalysis: finalLLMResult.layer3_communicative.emotional_analysis,
       },
       colorPalette: finalLLMResult.color_palette.map((c) => ({
         hex: c.hex,
@@ -357,6 +378,9 @@ export async function analyzeDesignHandler(
       })),
       detectedKeywords: finalLLMResult.detected_keywords,
       nextActions: finalLLMResult.next_actions,
+      strengths: finalLLMResult.strengths,
+      weaknesses: finalLLMResult.weaknesses,
+      overallAnalysis: finalLLMResult.overall_analysis,
     };
   } catch (error) {
     throw handleError(error, "analyzeDesign", userId);

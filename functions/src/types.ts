@@ -45,6 +45,9 @@ export interface PerformanceMetrics {
   goalClarityScore: number;
   accessibility: AccessibilityFlags;
   diagnosisSummary: string;
+  hierarchyAnalysis: string;
+  scanabilityAnalysis: string;
+  goalClarityAnalysis: string;
 }
 
 export interface FormMetrics {
@@ -52,12 +55,19 @@ export interface FormMetrics {
   visualBalance: number;
   colorHarmony: number;
   typographyQuality: number;
+  gridAnalysis: string;
+  balanceAnalysis: string;
+  colorAnalysis: string;
+  typographyAnalysis: string;
 }
 
 export interface CommunicativeMetrics {
   trustVibe: TrustVibe;
   engagementPotential: EngagementPotential;
   emotionalTone: EmotionalTone;
+  trustAnalysis: string;
+  engagementAnalysis: string;
+  emotionalAnalysis: string;
 }
 
 export interface ColorItem {
@@ -92,6 +102,9 @@ export interface AnalysisDocument {
   detectedKeywords: string[];
   ragSearchQueries: string[];
   nextActions: string[];
+  strengths: string[];
+  weaknesses: string[];
+  overallAnalysis: string;
 
   // Vector Search (Strategy A)
   imageEmbedding?: number[];
@@ -170,6 +183,9 @@ export interface LLMPerformanceMetrics {
   goal_clarity_score: number;
   accessibility: LLMAccessibilityFlags;
   diagnosis_summary: string;
+  hierarchy_analysis: string;
+  scanability_analysis: string;
+  goal_clarity_analysis: string;
 }
 
 export interface LLMFormMetrics {
@@ -177,12 +193,19 @@ export interface LLMFormMetrics {
   visual_balance: number;
   color_harmony: number;
   typography_quality: number;
+  grid_analysis: string;
+  balance_analysis: string;
+  color_analysis: string;
+  typography_analysis: string;
 }
 
 export interface LLMCommunicativeMetrics {
   trust_vibe: TrustVibe;
   engagement_potential: EngagementPotential;
   emotional_tone: EmotionalTone;
+  trust_analysis: string;
+  engagement_analysis: string;
+  emotional_analysis: string;
 }
 
 export interface LLMColorItem {
@@ -202,6 +225,9 @@ export interface DesignAnalysisResultLLM {
   detected_keywords: string[];
   rag_search_queries: string[];
   next_actions: string[];
+  strengths: string[];
+  weaknesses: string[];
+  overall_analysis: string;
 }
 
 // ============================================================================
@@ -228,6 +254,9 @@ export interface AnalyzeDesignResponse {
   colorPalette: ColorItem[];
   detectedKeywords: string[];
   nextActions: string[];
+  strengths: string[];
+  weaknesses: string[];
+  overallAnalysis: string;
 }
 
 export interface ChatRequest {
