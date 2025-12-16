@@ -74,13 +74,14 @@ async function uploadToStorage(
     },
   });
 
-  // Generate signed URL (valid for 1 year)
-  const [signedUrl] = await file.getSignedUrl({
-    action: "read",
-    expires: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
-  });
+  // Make file publicly readable (for frontend access)
+  await file.makePublic();
 
-  return signedUrl;
+  // Return public URL instead of signed URL
+  // This avoids the need for iam.serviceAccounts.signBlob permission
+  const publicUrl = `https://storage.googleapis.com/${STORAGE_BUCKET}/${filePath}`;
+  
+  return publicUrl;
 }
 
 /**
