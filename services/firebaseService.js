@@ -111,44 +111,85 @@ export function onAuthChange(callback) {
 }
 
 /**
- * Sign in anonymously
+ * Sign in anonymously with retry logic
  */
-export async function signInAnonymouslyUser() {
+export async function signInAnonymouslyUser(retries = 3, delay = 1000) {
   if (!auth) initializeFirebase();
 
-  try {
-    const result = await signInAnonymously(auth);
-    currentUser = result.user;
-    console.log("[Auth] Signed in anonymously:", result.user.uid);
-    return result.user;
-  } catch (error) {
-    console.error("[Auth] Anonymous sign-in failed:", error);
-    throw error;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const result = await signInAnonymously(auth);
+      currentUser = result.user;
+      console.log("[Auth] Signed in anonymously:", result.user.uid);
+      return result.user;
+    } catch (error) {
+      const errorCode = error.code || error.message;
+      
+      // configuration-not-found 에러는 재시도해도 의미 없음
+      if (errorCode.includes("configuration-not-found")) {
+        console.error("[Auth] Anonymous authentication not enabled in Firebase Console");
+        throw new Error(
+          "익명 인증이 활성화되지 않았습니다. Firebase Console에서 Anonymous Authentication을 활성화해주세요."
+        );
+      }
+
+      // 마지막 시도가 아니면 재시도
+      if (attempt < retries) {
+        console.warn(`[Auth] Anonymous sign-in failed (attempt ${attempt}/${retries}), retrying...`);
+        await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+        continue;
+      }
+
+      // 모든 시도 실패
+      console.error("[Auth] Anonymous sign-in failed after all retries:", error);
+      throw error;
+    }
   }
 }
 
 /**
  * Ensure user is authenticated (sign in anonymously if not)
+ * Includes timeout and better error handling
  */
-export async function ensureAuth() {
+export async function ensureAuth(timeout = 10000) {
   if (!auth) initializeFirebase();
 
+  // Already authenticated
   if (currentUser) {
     return currentUser;
   }
 
   return new Promise((resolve, reject) => {
+    let resolved = false;
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error("인증 시간 초과. 네트워크 연결을 확인해주세요."));
+      }
+    }, timeout);
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (resolved) return;
+      
       unsubscribe();
+      clearTimeout(timeoutId);
+      
       if (user) {
         currentUser = user;
+        resolved = true;
         resolve(user);
       } else {
         try {
           const newUser = await signInAnonymouslyUser();
-          resolve(newUser);
+          if (!resolved) {
+            resolved = true;
+            resolve(newUser);
+          }
         } catch (error) {
-          reject(error);
+          if (!resolved) {
+            resolved = true;
+            reject(error);
+          }
         }
       }
     });

@@ -35,5 +35,6 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "warn",
     "object-curly-spacing": ["error", "always"],
     "comma-dangle": ["error", "always-multiline"],
+    "linebreak-style": ["warn", "unix"],
   },
 };

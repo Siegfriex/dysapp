@@ -36,7 +36,15 @@ const FUNCTION_NAMES = {
  * @returns {Promise<Object>} Analysis result
  */
 export async function analyzeDesign({ imageData, mimeType, fileName, userPrompt }) {
-  await ensureAuth();
+  try {
+    await ensureAuth();
+  } catch (error) {
+    // 인증 실패 시 더 명확한 에러 메시지
+    if (error.message?.includes("익명 인증이 활성화되지 않았습니다")) {
+      throw new Error("Firebase 설정 오류: 관리자에게 문의하세요");
+    }
+    throw new Error("인증에 실패했습니다. 페이지를 새로고침해주세요");
+  }
 
   if (!imageData || !mimeType || !fileName) {
     throw new Error("Missing required fields: imageData, mimeType, fileName");

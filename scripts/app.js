@@ -47,6 +47,16 @@ export async function initApp() {
     await ensureAuth();
   } catch (error) {
     console.error("[App] Auth failed:", error);
+    
+    // 사용자에게 친화적인 에러 메시지 표시
+    const errorMessage = error.message || "인증에 실패했습니다";
+    if (errorMessage.includes("익명 인증이 활성화되지 않았습니다")) {
+      toast.error("Firebase 설정 오류: 익명 인증을 활성화해주세요");
+    } else if (errorMessage.includes("시간 초과")) {
+      toast.warning("네트워크 연결을 확인하고 페이지를 새로고침해주세요");
+    } else {
+      toast.error("인증 오류가 발생했습니다. 잠시 후 다시 시도해주세요");
+    }
   }
 
   window.dysapp.initialized = true;
