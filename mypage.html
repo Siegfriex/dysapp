@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myPageTab</title>
+    <link rel="stylesheet" href="./common.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    <script src="./includHTML.js" defer></script>
+    <script type="module" src="./scripts/app.js"></script>
+    <script type="module" src="./scripts/mypage.js"></script>
+</head>
+<body>
+    <div class="wrap">
+        <nav data-include-path="nav.html"></nav>
+        <main class="mypage_main">
+            <section class="profile-section"></section>
+            <section class="history-section">
+                <h3 class="section-title">분석 히스토리</h3>
+                <div class="history-grid"></div>
+                <button class="load-more-btn" style="display: none;">더 보기</button>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

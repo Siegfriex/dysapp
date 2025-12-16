@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>searchTab</title>
+    <link rel="stylesheet" href="./common.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    <script src="./includHTML.js" defer></script>
+    <script type="module" src="./scripts/app.js"></script>
+    <script type="module" src="./scripts/search.js"></script>
+</head>
+
+<body>
+    <div class="wrap">
+        <nav data-include-path="nav.html"></nav>
+        <main class="search_main">
+            <section class="search_box">
+                <textarea name="text" class="search" placeholder="검색할 텍스트를 입력해주세요."></textarea>
+                <button type="submit" class="uploadIcon">
+                    <img src="./img/upload.svg" alt="">
+                </button>
+                <button type="submit" class="searchIcon">
+                    <img src="./img/search.svg" alt="">
+                </button>
+            </section>
+            <section class="searchfile1">
+                <div class="category">
+                    <button class="filenameBox">
+                        <p class="filename">나의 스타일</p>
+                        <span class="nothing"></span>
+                    </button>
+                    <button class="filenameBox">
+                        <p class="filename">나의 레퍼런스</p>
+                        <span class="nothing"></span>
+                    </button>
+                    <button class="filenameBox">
+                        <p class="filename">추가 인사이트</p>
+                        <span class="nothing"></span>
+                    </button>
+                </div>
+                <button class="filter" onclick="location.href='filter.html'"><img src="./img/filter.svg" alt="" class="filterIcon"></button>
+                <div class="fileBox">
+                    <button class="img-btn downBtn">
+                        <img src="./img/download.svg" alt="" class="downIcon">
+                    </button>
+                    <button class="img-btn shareBtn">
+                        <img src="./img/share.svg" alt="" class="shareIcon">
+                    </button>
+                    <div class="searchImgBox">
+                        <img src="./img/ex1.png" alt="" class="searchImg">
+                        <img src="./img/ex2.png" alt="" class="searchImg">
+                        <img src="./img/ex3.png" alt="" class="searchImg">
+                        <img src="./img/ex4.png" alt="" class="searchImg">
+                        <img src="./img/ex5.png" alt="" class="searchImg">
+                        <img src="./img/ex6.png" alt="" class="searchImg">
+                        <img src="./img/ex7.png" alt="" class="searchImg">
+                        <img src="./img/ex8.png" alt="" class="searchImg">
+                        <img src="./img/ex9.png" alt="" class="searchImg">
+                        <img src="./img/ex10.png" alt="" class="searchImg">
+                        <img src="./img/ex11.png" alt="" class="searchImg">
+                        <img src="./img/ex12.png" alt="" class="searchImg">
+                        <div class="page-dim"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- <div class="page-dim"></div> -->
+
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ===============================================
+    //  [VW/VH 변환 함수]
+    // ===============================================
+
+    /**
+     * 픽셀(px) 값을 뷰포트 너비(vw) 단위로 변환.
+     * @param {number} pxValue - 픽셀 값
+     * @returns {number} - 변환된 vw 값
+     */
+    const pxToVw = (pxValue) => {
+        return (pxValue / window.innerWidth) * 100; 
+    };
+    
+    /**
+     * 픽셀(px) 값을 뷰포트 높이(vh) 단위로 변환.
+     * @param {number} pxValue - 픽셀 값
+     * @returns {number} - 변환된 vh 값
+     */
+    const pxToVh = (pxValue) => {
+        return (pxValue / window.innerHeight) * 100;
+    };
+
+
+    // ===============================================
+    // --- [1. filenameBox 클릭 이벤트 로직] ---
+    // ===============================================
+    const boxes = document.querySelectorAll('.filenameBox');
+    
+    boxes.forEach(box => {
+        const n = box.querySelector('.nothing');
+        if (n) n.style.opacity = '0'; // 초기: nothing 숨김
+    });
+    const first = boxes[0]?.querySelector('.nothing');
+    if (first) first.style.opacity = '1';
+    if (boxes[0]) boxes[0].classList.add('active');   // 첫 번째 박스 활성화
+
+    boxes.forEach(box => {
+        box.addEventListener('click', () => {
+            boxes.forEach(b => {
+                const n = b.querySelector('.nothing');
+                if (n) n.style.opacity = '0';
+                b.classList.remove('active');         // 다른 박스 비활성화
+            });
+
+            const target = box.querySelector('.nothing');
+            if (target) target.style.opacity = '1';
+            box.classList.add('active');              // 클릭 박스 활성화
+        });
+    });
+
+    // ===============================================
+    // --- [2. 이미지 호버 및 버튼 중앙 위치 로직] ---
+    // ===============================================
+    
+    const searchImages = document.querySelectorAll('.searchImg');
+    const downBtn = document.querySelector('.downBtn');
+    const shareBtn = document.querySelector('.shareBtn');
+    const fileBox = document.querySelector('.fileBox'); // 위치 계산 기준
+    
+    if (!downBtn || !shareBtn || !fileBox) return; // 필수 요소 검증
+
+    // 버튼 높이/너비 (px)
+    const btnWidth = downBtn.offsetWidth; 
+    const btnHeight = downBtn.offsetHeight;
+    
+    // 버튼 내부 아이콘 요소 선택
+    const downIcon = downBtn.querySelector('.downIcon');
+    const shareIcon = shareBtn.querySelector('.shareIcon');
+    
+    // 아이콘 기본 경로 정의
+    const originalShareSrc = './img/share.svg';
+    const hoverShareSrc = './img/shareHover.svg'; 
+    const originalDownSrc = './img/download.svg';
+    const hoverDownSrc = './img/downHover.svg'; 
+
+
+    searchImages.forEach(image => {
+        // 마우스 진입 (mouseenter)
+        image.addEventListener('mouseenter', () => {
+            const imgRect = image.getBoundingClientRect();
+            const fileBoxRect = fileBox.getBoundingClientRect();
+            
+            // fileBox 기준 이미지의 상대 위치 (px)
+            const relativeLeft = imgRect.left - fileBoxRect.left;
+            const relativeTop = imgRect.top - fileBoxRect.top;
+            
+            const imageWidth = imgRect.width;
+            const imageHeight = imgRect.height;
+            
+            // 수직 중앙 위치 (px): 이미지 상단 + (이미지 높이 / 2) - (버튼 높이 / 2)
+            const centerY = relativeTop + (imageHeight / 2) - (btnHeight / 2);
+
+            // 다운로드 버튼 최종 위치 (px)
+            const downLeftPx = relativeLeft + imageWidth - btnWidth + 25; 
+            const shareLeftPx = relativeLeft - 25; 
+
+            // --- 위치를 VW/VH로 변환하여 적용 ---
+            
+            // 다운로드 버튼 위치
+            downBtn.style.left = `${pxToVw(downLeftPx)}vw`;
+            downBtn.style.top = `${pxToVh(centerY)}vh`;
+            
+            // 공유 버튼 위치
+            shareBtn.style.left = `${pxToVw(shareLeftPx)}vw`;
+            shareBtn.style.top = `${pxToVh(centerY)}vh`;
+            
+            // 버튼 노출
+            downBtn.style.opacity = '1';
+            downBtn.style.pointerEvents = 'auto';
+            shareBtn.style.opacity = '1';
+            shareBtn.style.pointerEvents = 'auto';
+
+            // 이미지 z-index/확대 효과
+            image.style.zIndex = '100'; 
+            image.style.transform = 'scale(1.04)';
+        });
+
+        // 마우스 이탈 (mouseleave)
+        image.addEventListener('mouseleave', () => {
+            // 버튼 숨김
+            downBtn.style.opacity = '0';
+            downBtn.style.pointerEvents = 'none';
+            shareBtn.style.opacity = '0';
+            shareBtn.style.pointerEvents = 'none';
+
+            // 이미지 z-index/확대 효과 복구
+            image.style.zIndex = '';
+            image.style.transform = '';
+        });
+    });
+
+    // ===============================================
+    // --- [3. 버튼 자체 호버 처리 로직 및 이미지 SRC 변경 로직] ---
+    // ===============================================
+    const allButtons = [downBtn, shareBtn];
+    allButtons.forEach(btn => {
+        const icon = btn === downBtn ? downIcon : shareIcon;
+        const originalSrc = btn === downBtn ? originalDownSrc : originalShareSrc;
+        const hoverSrc = btn === downBtn ? hoverDownSrc : hoverShareSrc;
+        
+        btn.addEventListener('mouseenter', () => {
+             // 1. 마우스가 버튼 위로 올라오면 유지 (버튼 노출)
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            
+            // 2. 내부 아이콘 경로 변경 (호버 이미지 적용)
+            if (icon) icon.src = hoverSrc;
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            // 1. 마우스가 버튼에서 나가면 숨김 (버튼 숨김)
+            btn.style.opacity = '0';
+            btn.style.pointerEvents = 'none';
+
+            // 2. 내부 아이콘 경로 복구 (원본 이미지 적용)
+            if (icon) icon.src = originalSrc;
+        });
+    });
+});
+    </script>
+</body>
+
+</html>

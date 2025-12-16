@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }   
+        </style>
+</head>
+<body>
+    <div class="layout">
+        <nav class="sidebar">
+            <ul class="nav_ul logo_ul">
+                <li>
+                    <a href="./index.html">
+                        <img src="./img/logo.svg" alt="" style="width: 1.9vw;">
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="nav_ul nav_tab">
+                <li><a href="./analyze.html"><img src="./img/uploadTab.svg" style="width: 1.2vw;"></a></li>
+                <li><a href="./searchTab.html"><img src="./img/searchTab.svg" style="width: 1.4vw;"></a></li>
+                <li><a href=""><img src="./img/alertTab.svg" style="width: 1.3vw;"></a></li>
+            </ul>
+
+            <div class="nav_ul nav_tab nav_ul3">
+                <button>
+
+                        <img src="./img/suscribeTab.svg" style="width: 0.8vw;">
+ 
+                </button>
+                <button id="settingsBtn">
+                    <img src="./img/setting.svg" style="width: 1.3vw;">
+                </button>
+            </div>
+        </nav>
+        
+        <div class="mypage-btn">
+            <a href="./mypage.html">
+                <img class="mypageIcon" src="./img/mypage.svg" alt="">
+            </a>
+        </div>
+        
+        <div id="settingsBox" class="settings-box">
+            <ul>
+                <li>프로필 설정</li>
+                <li>알림 설정</li>
+                <li>로그아웃</li>
+            </ul>
+        </div>
+    </div>
+    <script defer>
+        const settingsBtn = document.getElementById("settingsBtn");
+    const settingsBox = document.getElementById("settingsBox");
+    
+    settingsBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // 클릭이 window로 전파되는 거 막기
+        settingsBox.style.display =
+            settingsBox.style.display === "block" ? "none" : "block";
+    });
+    
+    settingsBox.addEventListener("click", (e) => {
+        e.stopPropagation(); // 내부 클릭 시 닫히지 않도록
+    });
+    
+    window.addEventListener("click", () => {
+        settingsBox.style.display = "none";
+    });
+
+    
+    </script>
+</body>
+
+</html>
