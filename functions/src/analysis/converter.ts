@@ -102,6 +102,7 @@ export function llmToFirestore(
     embeddingVersion: EMBEDDING_VERSION,
     analysisVersion: ANALYSIS_VERSION,
     ...(embedding && { imageEmbedding: embedding }),
+    ...(llm.recognized_text && { ocrText: llm.recognized_text }),
   };
 }
 

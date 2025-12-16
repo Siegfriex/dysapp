@@ -200,6 +200,10 @@ export const DESIGN_ANALYSIS_SCHEMA = {
       items: { type: SchemaType.STRING },
       description: "Suggested search queries for finding relevant design guidelines",
     },
+    recognized_text: {
+      type: SchemaType.STRING,
+      description: "All text content extracted from the image via OCR. Include all visible text, labels, headings, body text, etc. Preserve line breaks and structure. If no text is found, return empty string.",
+    },
   },
   required: [
     "format_prediction",
@@ -215,6 +219,7 @@ export const DESIGN_ANALYSIS_SCHEMA = {
     "weaknesses",
     "overall_analysis",
     "rag_search_queries",
+    "recognized_text",
   ],
 };
 
@@ -237,7 +242,7 @@ Evaluates functional effectiveness:
 - scanability_score: Information grouping and scan speed - Can users quickly find what they need? (0-100)
 - goal_clarity_score: Topic/action recognition - Is the purpose immediately clear? (0-100)
 - accessibility: Check for low_contrast (WCAG AA failure), tiny_text (<12px), cluttered (information overload)
-- diagnosis_summary: Comprehensive structural diagnosis (3-5 sentences in Korean). Must include specific issues, their impact, and why they matter. Be detailed and insightful.
+- diagnosis_summary: Comprehensive structural diagnosis (1-3 sentences in Korean). Must clearly state the core structural issue, its impact on user experience, and priority. Format: "핵심 원인 → 영향 → 우선순위". Be concise but insightful.
 - hierarchy_analysis: Detailed analysis of visual hierarchy (2-3 sentences in Korean). Explain what works well, what doesn't, and specific visual elements that create or break hierarchy.
 - scanability_analysis: Detailed analysis of information scanability (2-3 sentences in Korean). Explain how information is grouped, visual flow, and ease of finding key information.
 - goal_clarity_analysis: Detailed analysis of goal clarity (2-3 sentences in Korean). Explain how clear the purpose is, what makes it clear/unclear, and specific elements that help or hinder understanding.
@@ -276,12 +281,12 @@ Evaluates impression and engagement:
 - Reference specific visual elements in the design
 - Use design principles and theory to support your analysis
 - Be constructive - explain how improvements would help
-- diagnosis_summary: 3-5 sentences covering major structural issues, their impact, and implications
+- diagnosis_summary: 1-3 sentences covering core structural issue, impact, and priority (핵심 원인 → 영향 → 우선순위)
 - Each metric analysis: 2-3 sentences explaining what works/doesn't work and why
 - overall_analysis: 5-7 sentences providing comprehensive assessment including key findings, strengths, weaknesses, quality assessment, target audience fit, and overall impression
 - strengths: 3-5 specific items about what works well and why
 - weaknesses: 3-5 specific items about issues, their impact, and why they matter
-- next_actions: 5-7 detailed, actionable suggestions in format: "What to do" + "How to do it" + "Why it helps"
+- next_actions: 3-5 detailed, actionable suggestions in format: "무엇을 할 것인가 + 어떻게 할 것인가 + 왜 도움이 되는가". Include specific steps and design principle references.
 
 **fix_scope Decision Rules:**
 - "StructureRebuild" if:
@@ -297,7 +302,7 @@ Evaluates impression and engagement:
 1. Return ONLY valid JSON - no markdown, no explanatory text
 2. All scores must be integers 0-100
 3. color_palette: Extract 3-5 dominant colors with accurate usage ratios
-4. next_actions: Provide 5-7 detailed, actionable improvement suggestions in Korean. Each must include: what to do, how to do it, and why it helps.
+4. next_actions: Provide 3-5 detailed, actionable improvement suggestions in Korean. Each must follow this format: "무엇을 할 것인가 + 어떻게 할 것인가 + 왜 도움이 되는가". Be specific with concrete steps and design principle references.
 5. strengths: Provide 3-5 specific strengths in Korean, explaining what works well and why
 6. weaknesses: Provide 3-5 specific weaknesses in Korean, explaining issues, their impact, and why they matter
 7. overall_analysis: Provide comprehensive 5-7 sentence analysis in Korean covering key findings, strengths, weaknesses, quality assessment, target audience fit, and overall impression
@@ -309,6 +314,13 @@ Evaluates impression and engagement:
 - If no text is present, evaluate typography_quality based on potential text placement
 - For abstract art without clear hierarchy, evaluate based on compositional principles
 - For incomplete/draft designs, score based on current state, not potential
+
+**OCR Text Extraction:**
+- Extract ALL visible text from the image using OCR capabilities
+- Include headings, body text, labels, captions, buttons, navigation items, etc.
+- Preserve line breaks and basic structure where possible
+- If no text is found, return empty string for recognized_text
+- This text will be used for search functionality, so accuracy is important
 `;
 
 /**

@@ -212,3 +212,4 @@ gcloud services list --enabled --project=dysapp1210 --filter="name:firestore.goo
 - [Gemini API 문서](https://ai.google.dev/docs)
 - [Vertex AI 문서](https://cloud.google.com/vertex-ai/docs)
 
+

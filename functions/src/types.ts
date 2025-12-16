@@ -105,6 +105,9 @@ export interface AnalysisDocument {
   strengths: string[];
   weaknesses: string[];
   overallAnalysis: string;
+  
+  // OCR Text (for text-based search)
+  ocrText?: string;
 
   // Vector Search (Strategy A)
   imageEmbedding?: number[];
@@ -228,6 +231,7 @@ export interface DesignAnalysisResultLLM {
   strengths: string[];
   weaknesses: string[];
   overall_analysis: string;
+  recognized_text?: string; // OCR extracted text from image
 }
 
 // ============================================================================

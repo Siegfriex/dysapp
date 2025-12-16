@@ -18,6 +18,8 @@ export const RATE_LIMITS = {
   ANALYZE_DESIGN: { maxRequests: 10, windowMs: 60 * 1000 }, // 10 requests per minute
   CHAT_WITH_MENTOR: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
   SEARCH_SIMILAR: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
+  SEARCH_TEXT: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
+  SAVE_ITEM: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   GET_ANALYSES: { maxRequests: 60, windowMs: 60 * 1000 }, // 60 requests per minute
   DEFAULT: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
 } as const;
@@ -72,4 +74,5 @@ export function cleanupRateLimitStore(): void {
 if (typeof setInterval !== "undefined") {
   setInterval(cleanupRateLimitStore, 5 * 60 * 1000);
 }
+
 

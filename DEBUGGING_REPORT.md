@@ -78,3 +78,4 @@ service firebase.storage {
 2. Cloud Functions 로그 모니터링
 3. 에러 발생 시 추가 디버깅
 
+

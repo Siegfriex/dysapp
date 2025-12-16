@@ -336,6 +336,41 @@ export function adaptAnalysesResponse(apiResponse) {
  * @param {Object} apiResponse - Response from searchSimilar
  * @returns {Object} Adapted search results
  */
+/**
+ * Adapt text search response to UI format
+ * @param {Object} apiResponse - Response from searchText
+ * @returns {Object} UI-friendly search results
+ */
+export function adaptTextSearchResponse(apiResponse) {
+  if (!apiResponse || !apiResponse.success || !apiResponse.results) {
+    return { items: [], count: 0 };
+  }
+
+  const items = apiResponse.results.map((result) => ({
+    id: result.id,
+    imageUrl: result.imageUrl,
+    fileName: result.fileName,
+    format: {
+      value: result.formatPrediction,
+      label: FORMAT_LABELS[result.formatPrediction] || result.formatPrediction,
+    },
+    score: result.overallScore,
+    fixScope: {
+      value: result.fixScope,
+      label: FIX_SCOPE_LABELS[result.fixScope],
+      isRebuild: result.fixScope === "StructureRebuild",
+    },
+    similarityLabel: "텍스트 일치",
+    ocrText: result.ocrText,
+    relevanceScore: result.relevanceScore || 0,
+  }));
+
+  return {
+    items,
+    count: items.length,
+  };
+}
+
 export function adaptSearchResponse(apiResponse) {
   if (!apiResponse || !apiResponse.success) {
     return { items: [], count: 0 };

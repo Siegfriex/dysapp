@@ -14,6 +14,8 @@ const FUNCTION_NAMES = {
   ANALYZE_DESIGN: "analyzeDesign",
   CHAT_WITH_MENTOR: "chatWithMentor",
   SEARCH_SIMILAR: "searchSimilar",
+  SEARCH_TEXT: "searchText",
+  SAVE_ITEM: "saveItem",
   GET_ANALYSES: "getAnalyses",
   GET_ANALYSIS: "getAnalysis",
   GET_USER_PROFILE: "getUserProfile",
@@ -189,6 +191,52 @@ export async function searchSimilar(params) {
     filterFixScope: params.filterFixScope,
     minScore: params.minScore,
   });
+}
+
+/**
+ * Search designs by OCR text content
+ * @param {Object} params
+ * @param {string} params.query - Text query to search for
+ * @param {number} [params.limit=20]
+ * @param {string} [params.filterFormat]
+ * @param {string} [params.filterFixScope]
+ * @param {number} [params.minScore]
+ * @returns {Promise<Object>} Search results
+ */
+export async function searchText(params) {
+  await ensureAuth();
+
+  const { query } = params;
+
+  if (!query || query.trim().length < 2) {
+    throw new Error("Query must be at least 2 characters");
+  }
+
+  return callFunction(FUNCTION_NAMES.SEARCH_TEXT, {
+    query: query.trim(),
+    limit: params.limit || 20,
+    filterFormat: params.filterFormat,
+    filterFixScope: params.filterFixScope,
+    minScore: params.minScore,
+  });
+}
+
+/**
+ * Save an analysis to user's bookmarks
+ * @param {Object} params
+ * @param {string} params.analysisId - Analysis ID to save
+ * @returns {Promise<Object>} Save result
+ */
+export async function saveItem(params) {
+  await ensureAuth();
+
+  const { analysisId } = params;
+
+  if (!analysisId) {
+    throw new Error("Missing analysisId");
+  }
+
+  return callFunction(FUNCTION_NAMES.SAVE_ITEM, { analysisId });
 }
 
 // ============================================================================

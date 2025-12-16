@@ -124,16 +124,26 @@ function renderHeader() {
 }
 
 /**
- * Generate summary text based on analysis
+ * Generate summary text based on analysis (리포트 형태)
  */
 function generateSummary(analysis) {
-  const { format, score, layer3 } = analysis;
-  const tone = layer3?.tone?.label || "심플한";
+  // 서버에서 제공한 진단 요약을 우선 사용
+  const diagnosis = analysis.layer1?.diagnosis;
+  if (diagnosis && diagnosis.trim()) {
+    return diagnosis;
+  }
 
-  if (score.value >= 80) {
+  // 진단이 없을 경우에만 폴백
+  const { format, score, layer3, fixScope } = analysis;
+  const tone = layer3?.tone?.label || "심플한";
+  const scopeLabel = fixScope?.label || "";
+
+  if (fixScope?.isRebuild) {
+    return `${format.label} 디자인입니다. ${scopeLabel}가 필요합니다. 구조적 문제가 발견되었습니다.`;
+  } else if (score.value >= 80) {
     return `${tone} 무드의 완성도 높은 ${format.label} 작업물입니다.`;
   } else if (score.value >= 60) {
-    return `${tone} 분위기의 ${format.label} 디자인입니다. 일부 개선이 필요합니다.`;
+    return `${tone} 분위기의 ${format.label} 디자인입니다. ${scopeLabel}을 통해 완성도를 높일 수 있습니다.`;
   } else {
     return `${format.label} 디자인입니다. 구조적 개선이 필요합니다.`;
   }
@@ -175,6 +185,9 @@ function renderDataBoxes() {
 
   // Typography box
   renderTypographyMetrics();
+
+  // Layer 3 브랜딩 인상 리포트
+  renderLayer3Report();
 
   // Language/text data
   renderLanguageData();
@@ -263,9 +276,34 @@ function renderLayoutMetrics() {
     )
     .join("");
 
-  // Description
+  // Description - 리포트 형태로 개선
   if (layoutDesc) {
-    layoutDesc.textContent = layer1?.diagnosis || "레이아웃 분석 결과입니다.";
+    const diagnosis = layer1?.diagnosis || "";
+    const accessibility = layer1?.accessibility;
+    const issues = accessibility?.issues || [];
+    
+    let descText = diagnosis;
+    
+    // 접근성 이슈가 있으면 추가
+    if (issues.length > 0) {
+      const issueLabels = issues.map(issue => issue.label).join(", ");
+      descText += ` 접근성 이슈: ${issueLabels}.`;
+    }
+    
+    // 핵심 위험도 표시
+    const avgScore = Math.round(
+      ((layer1?.hierarchy?.value || 0) + 
+       (layer1?.scanability?.value || 0) + 
+       (layer1?.goalClarity?.value || 0)) / 3
+    );
+    
+    if (avgScore < 50) {
+      descText += " [심각] 구조 재설계가 시급합니다.";
+    } else if (avgScore < 60) {
+      descText += " [주의] 구조적 개선이 필요합니다.";
+    }
+    
+    layoutDesc.textContent = descText || "레이아웃 분석 결과입니다.";
   }
 }
 
@@ -290,16 +328,74 @@ function renderTypographyMetrics() {
     </span>
   `;
 
-  // Description
+  // Description - 리포트 형태로 개선 (규칙 기반)
   if (typoDesc) {
+    const layer2 = currentAnalysis.layer2;
+    const grid = layer2?.grid?.value || 0;
+    const balance = layer2?.balance?.value || 0;
+    const color = layer2?.color?.value || 0;
+    
+    // Layer 2 종합 평가
+    const layer2Avg = Math.round((grid + balance + color + typoQuality) / 4);
+    
+    let descParts = [];
+    
     if (typoQuality >= 80) {
-      typoDesc.textContent = "타이포그래피가 잘 구성되어 있습니다. 가독성과 계층 구조가 명확합니다.";
+      descParts.push("타이포그래피: 가독성과 계층 구조가 명확합니다.");
     } else if (typoQuality >= 60) {
-      typoDesc.textContent = "타이포그래피 구성이 양호합니다. 행간이나 자간 조정으로 개선할 수 있습니다.";
+      descParts.push("타이포그래피: 행간/자간 조정으로 개선 가능합니다.");
     } else {
-      typoDesc.textContent = "타이포그래피 개선이 필요합니다. 폰트 선택과 크기 대비를 검토해 보세요.";
+      descParts.push("타이포그래피: 폰트 선택과 크기 대비 개선이 필요합니다.");
+    }
+    
+    // 그리드와 균형도 간단히 언급
+    if (grid < 70) {
+      descParts.push("그리드 정렬을 개선하면 구조가 더 명확해집니다.");
+    }
+    if (balance < 70) {
+      descParts.push("시각적 균형을 조정하면 안정감이 향상됩니다.");
+    }
+    
+    typoDesc.textContent = descParts.join(" ");
+  }
+}
+
+/**
+ * Render Layer 3 브랜딩 인상 리포트
+ */
+function renderLayer3Report() {
+  const layer3 = currentAnalysis.layer3;
+  if (!layer3) return;
+
+  // Layer 3 리포트를 표시할 요소 찾기 (기존 요소 활용 또는 새로 생성)
+  // 일단 기존 레이아웃에 통합하는 방식으로 진행
+  const layoutDesc = document.getElementById("layoutDesc");
+  if (layoutDesc && layer3.trust && layer3.engagement && layer3.tone) {
+    // Layer 3 정보를 기존 설명에 추가
+    const currentText = layoutDesc.textContent || "";
+    const layer3Summary = generateLayer3Summary(layer3);
+    
+    // 기존 텍스트가 있으면 추가, 없으면 새로 생성
+    if (currentText && !currentText.includes("브랜딩")) {
+      layoutDesc.textContent = currentText + " " + layer3Summary;
     }
   }
+}
+
+/**
+ * Generate Layer 3 브랜딩 인상 요약
+ */
+function generateLayer3Summary(layer3) {
+  const trust = layer3.trust?.label || "보통";
+  const engagement = layer3.engagement?.label || "보통";
+  const tone = layer3.tone?.label || "차분한";
+  
+  const trustLevel = layer3.trust?.value === "High" ? "높은" : 
+                     layer3.trust?.value === "Low" ? "낮은" : "보통의";
+  const engagementLevel = layer3.engagement?.value === "High" ? "높은" : 
+                          layer3.engagement?.value === "Low" ? "낮은" : "보통의";
+  
+  return `브랜딩 인상: ${trustLevel} 신뢰도와 ${engagementLevel} 참여 유도력을 가진 ${tone} 톤의 디자인입니다.`;
 }
 
 /**
@@ -382,19 +478,45 @@ function getUsageSuggestions(format) {
 }
 
 /**
- * Render AI suggestion section
+ * Render AI suggestion section (리포트 형태 - 체크리스트)
  */
 function renderAISuggestion() {
   if (!aiRecommendation) return;
 
   const actions = currentAnalysis.nextActions;
+  const fixScope = currentAnalysis.fixScope;
+  
   if (actions && actions.length > 0) {
+    // 리포트 형태의 체크리스트로 렌더링
+    const scopeLabel = fixScope?.label || "";
+    const scopeEmoji = fixScope?.isRebuild ? "🔧" : "✨";
+    
     aiRecommendation.innerHTML = `
-      <strong>개선 제안:</strong><br/>
-      ${actions.map((action, i) => `${i + 1}. ${action}`).join("<br/>")}
+      <div style="margin-bottom: 12px;">
+        <strong style="font-size: 1.1em;">${scopeEmoji} ${scopeLabel} 액션 아이템</strong>
+        <p style="margin: 8px 0; color: #666; font-size: 0.9em;">
+          ${fixScope?.isRebuild 
+            ? "구조적 개선이 우선입니다. 아래 항목을 순서대로 진행하세요." 
+            : "디테일 튜닝을 통해 완성도를 높이세요."}
+        </p>
+      </div>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${actions.map((action, i) => `
+          <li style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-left: 3px solid ${fixScope?.isRebuild ? '#ef4444' : '#3b82f6'}; border-radius: 4px;">
+            <div style="display: flex; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: ${fixScope?.isRebuild ? '#ef4444' : '#3b82f6'}; color: white; border-radius: 50%; font-size: 0.85em; font-weight: bold; margin-right: 12px; flex-shrink: 0;">${i + 1}</span>
+              <div style="flex: 1;">
+                <p style="margin: 0; line-height: 1.6;">${action}</p>
+              </div>
+            </div>
+          </li>
+        `).join("")}
+      </ul>
     `;
   } else {
-    aiRecommendation.textContent = "분석 결과를 바탕으로 AI가 개선 방안을 제안합니다.";
+    aiRecommendation.innerHTML = `
+      <p style="color: #666;">분석 결과를 바탕으로 AI가 개선 방안을 제안합니다.</p>
+    `;
   }
 }
 

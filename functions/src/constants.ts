@@ -12,7 +12,7 @@
 export const VISION_MODEL = "gemini-3-pro-preview";
 
 /** Chat model for AI mentor */
-export const CHAT_MODEL = "gemini-3-pro-preview";
+export const CHAT_MODEL = "gemini-2.5-flash";
 
 /** Embedding model for vector search */
 export const EMBEDDING_MODEL = "multimodalembedding@001";
@@ -150,6 +150,8 @@ export const LIMITS = {
   MAX_SIMILAR_RESULTS: 20,
   DEFAULT_SIMILAR_LIMIT: 10,
   MAX_CHAT_HISTORY: 50,
+  MAX_SEARCH_QUERY_LENGTH: 200,
+  MAX_SEARCH_RESULTS: 50,
 } as const;
 
 // ============================================================================

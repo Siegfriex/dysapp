@@ -205,7 +205,7 @@
             const favBtn = document.querySelector(".favBtn");
             const myFBtn = document.querySelector(".myFBtn");
             const saveFBtn = document.querySelector(".saveFBtn");
-            const finishFBtn = document.querySelector(".finishFBtn"); // finishFBtn도 발견하여 추가합니다.
+            const finishFBtn = document.querySelector(".finishFBtn");
 
             // 필터 섹션 컨테이너들
             const basicSection = document.querySelector(".filterBasic");
@@ -520,6 +520,44 @@
                     modalBg.style.display = 'none';
                 }
             });
+
+            // ===============================================
+            // --- [9. 필터 저장 및 적용 플로우] ---
+            // ===============================================
+            if (finishFBtn) {
+                finishFBtn.addEventListener('click', () => {
+                    // 현재 필터 상태 수집
+                    const selectedColors = Array.from(document.querySelectorAll('.colorPalette span.selected'))
+                        .map(span => {
+                            const classes = Array.from(span.classList);
+                            const colorClass = classes.find(c => c.startsWith('colorP'));
+                            return colorClass ? colorClass.replace('colorP', '') : null;
+                        })
+                        .filter(Boolean);
+
+                    const styleRange = document.getElementById('styleRange');
+                    const styleReflect = styleRange ? parseInt(styleRange.value, 10) : null;
+
+                    const keywordItems = document.getElementById('keywordItems');
+                    const keywords = keywordItems ? Array.from(keywordItems.querySelectorAll('li'))
+                        .map(li => li.textContent.trim())
+                        .filter(Boolean) : [];
+
+                    // 필터 객체 생성
+                    const filters = {
+                        colors: selectedColors,
+                        styleReflect: styleReflect,
+                        keywords: keywords,
+                        timestamp: Date.now(),
+                    };
+
+                    // sessionStorage에 저장
+                    sessionStorage.setItem('appliedFilters', JSON.stringify(filters));
+                    
+                    // searchTab으로 복귀
+                    window.location.href = 'searchTab.html';
+                });
+            }
 
 
 

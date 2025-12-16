@@ -69,170 +69,42 @@
             </section>
         </main>
     </div>
-    <!-- <div class="page-dim"></div> -->
 
-    <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // ===============================================
-    //  [VW/VH 변환 함수]
-    // ===============================================
-
-    /**
-     * 픽셀(px) 값을 뷰포트 너비(vw) 단위로 변환.
-     * @param {number} pxValue - 픽셀 값
-     * @returns {number} - 변환된 vw 값
-     */
-    const pxToVw = (pxValue) => {
-        return (pxValue / window.innerWidth) * 100; 
-    };
-    
-    /**
-     * 픽셀(px) 값을 뷰포트 높이(vh) 단위로 변환.
-     * @param {number} pxValue - 픽셀 값
-     * @returns {number} - 변환된 vh 값
-     */
-    const pxToVh = (pxValue) => {
-        return (pxValue / window.innerHeight) * 100;
-    };
-
-
-    // ===============================================
-    // --- [1. filenameBox 클릭 이벤트 로직] ---
-    // ===============================================
-    const boxes = document.querySelectorAll('.filenameBox');
-    
-    boxes.forEach(box => {
-        const n = box.querySelector('.nothing');
-        if (n) n.style.opacity = '0'; // 초기: nothing 숨김
-    });
-    const first = boxes[0]?.querySelector('.nothing');
-    if (first) first.style.opacity = '1';
-    if (boxes[0]) boxes[0].classList.add('active');   // 첫 번째 박스 활성화
-
-    boxes.forEach(box => {
-        box.addEventListener('click', () => {
-            boxes.forEach(b => {
-                const n = b.querySelector('.nothing');
-                if (n) n.style.opacity = '0';
-                b.classList.remove('active');         // 다른 박스 비활성화
-            });
-
-            const target = box.querySelector('.nothing');
-            if (target) target.style.opacity = '1';
-            box.classList.add('active');              // 클릭 박스 활성화
-        });
-    });
-
-    // ===============================================
-    // --- [2. 이미지 호버 및 버튼 중앙 위치 로직] ---
-    // ===============================================
-    
-    const searchImages = document.querySelectorAll('.searchImg');
-    const downBtn = document.querySelector('.downBtn');
-    const shareBtn = document.querySelector('.shareBtn');
-    const fileBox = document.querySelector('.fileBox'); // 위치 계산 기준
-    
-    if (!downBtn || !shareBtn || !fileBox) return; // 필수 요소 검증
-
-    // 버튼 높이/너비 (px)
-    const btnWidth = downBtn.offsetWidth; 
-    const btnHeight = downBtn.offsetHeight;
-    
-    // 버튼 내부 아이콘 요소 선택
-    const downIcon = downBtn.querySelector('.downIcon');
-    const shareIcon = shareBtn.querySelector('.shareIcon');
-    
-    // 아이콘 기본 경로 정의
-    const originalShareSrc = './img/share.svg';
-    const hoverShareSrc = './img/shareHover.svg'; 
-    const originalDownSrc = './img/download.svg';
-    const hoverDownSrc = './img/downHover.svg'; 
-
-
-    searchImages.forEach(image => {
-        // 마우스 진입 (mouseenter)
-        image.addEventListener('mouseenter', () => {
-            const imgRect = image.getBoundingClientRect();
-            const fileBoxRect = fileBox.getBoundingClientRect();
-            
-            // fileBox 기준 이미지의 상대 위치 (px)
-            const relativeLeft = imgRect.left - fileBoxRect.left;
-            const relativeTop = imgRect.top - fileBoxRect.top;
-            
-            const imageWidth = imgRect.width;
-            const imageHeight = imgRect.height;
-            
-            // 수직 중앙 위치 (px): 이미지 상단 + (이미지 높이 / 2) - (버튼 높이 / 2)
-            const centerY = relativeTop + (imageHeight / 2) - (btnHeight / 2);
-
-            // 다운로드 버튼 최종 위치 (px)
-            const downLeftPx = relativeLeft + imageWidth - btnWidth + 25; 
-            const shareLeftPx = relativeLeft - 25; 
-
-            // --- 위치를 VW/VH로 변환하여 적용 ---
-            
-            // 다운로드 버튼 위치
-            downBtn.style.left = `${pxToVw(downLeftPx)}vw`;
-            downBtn.style.top = `${pxToVh(centerY)}vh`;
-            
-            // 공유 버튼 위치
-            shareBtn.style.left = `${pxToVw(shareLeftPx)}vw`;
-            shareBtn.style.top = `${pxToVh(centerY)}vh`;
-            
-            // 버튼 노출
-            downBtn.style.opacity = '1';
-            downBtn.style.pointerEvents = 'auto';
-            shareBtn.style.opacity = '1';
-            shareBtn.style.pointerEvents = 'auto';
-
-            // 이미지 z-index/확대 효과
-            image.style.zIndex = '100'; 
-            image.style.transform = 'scale(1.04)';
-        });
-
-        // 마우스 이탈 (mouseleave)
-        image.addEventListener('mouseleave', () => {
-            // 버튼 숨김
-            downBtn.style.opacity = '0';
-            downBtn.style.pointerEvents = 'none';
-            shareBtn.style.opacity = '0';
-            shareBtn.style.pointerEvents = 'none';
-
-            // 이미지 z-index/확대 효과 복구
-            image.style.zIndex = '';
-            image.style.transform = '';
-        });
-    });
-
-    // ===============================================
-    // --- [3. 버튼 자체 호버 처리 로직 및 이미지 SRC 변경 로직] ---
-    // ===============================================
-    const allButtons = [downBtn, shareBtn];
-    allButtons.forEach(btn => {
-        const icon = btn === downBtn ? downIcon : shareIcon;
-        const originalSrc = btn === downBtn ? originalDownSrc : originalShareSrc;
-        const hoverSrc = btn === downBtn ? hoverDownSrc : hoverShareSrc;
-        
-        btn.addEventListener('mouseenter', () => {
-             // 1. 마우스가 버튼 위로 올라오면 유지 (버튼 노출)
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-            
-            // 2. 내부 아이콘 경로 변경 (호버 이미지 적용)
-            if (icon) icon.src = hoverSrc;
-        });
-
-        btn.addEventListener('mouseleave', () => {
-            // 1. 마우스가 버튼에서 나가면 숨김 (버튼 숨김)
-            btn.style.opacity = '0';
-            btn.style.pointerEvents = 'none';
-
-            // 2. 내부 아이콘 경로 복구 (원본 이미지 적용)
-            if (icon) icon.src = originalSrc;
-        });
-    });
-});
-    </script>
+    <!-- 검색 결과 상세 모달 -->
+    <div class="search_result_modal_bg" id="searchResultModalBg">
+        <div class="search_result_modal_box" id="searchResultModalBox">
+            <button class="search_modal_closeBtn" id="searchModalCloseBtn">
+                <img src="./img/close_btn.svg" alt="닫기">
+            </button>
+            <div class="search_modal_content">
+                <div class="search_modal_image">
+                    <img id="searchModalImage" src="" alt="">
+                </div>
+                <div class="search_modal_info">
+                    <h2 class="search_modal_title" id="searchModalTitle"></h2>
+                    <div class="search_modal_meta">
+                        <span class="search_modal_similarity" id="searchModalSimilarity"></span>
+                        <span class="search_modal_score" id="searchModalScore"></span>
+                    </div>
+                    <div class="search_modal_ocr" id="searchModalOcr">
+                        <p class="search_modal_ocr_label">인식된 텍스트</p>
+                        <p class="search_modal_ocr_text" id="searchModalOcrText"></p>
+                    </div>
+                    <div class="search_modal_actions">
+                        <button class="search_modal_action_btn save_btn" id="searchModalSaveBtn">
+                            <img src="./img/star.svg" alt=""> 저장
+                        </button>
+                        <button class="search_modal_action_btn share_btn" id="searchModalShareBtn">
+                            <img src="./img/share.svg" alt=""> 공유
+                        </button>
+                        <button class="search_modal_action_btn download_btn" id="searchModalDownloadBtn">
+                            <img src="./img/download.svg" alt=""> 다운로드
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -252,3 +252,4 @@ firebase deploy --only firestore:indexes
 **검증자**: 배포 전 점검 스크립트  
 **상태**: ✅ 배포 준비 완료 (의존성 설치 및 빌드 테스트 필요)
 
+

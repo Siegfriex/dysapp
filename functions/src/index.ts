@@ -31,6 +31,8 @@ export { chatWithMentor } from "./chat/chatWithMentor";
 
 // Search Functions
 export { searchSimilar } from "./search/searchSimilar";
+export { searchText } from "./search/searchText";
+export { saveItem } from "./search/saveItem";
 
 // User/Profile Functions
 export {

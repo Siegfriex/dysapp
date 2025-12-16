@@ -77,3 +77,4 @@ export const CHAT_MODEL = "gemini-3-pro-preview";     // ✅ 3.0 이상
 2. **테스트**: 실제 API 호출로 모델명 검증
 3. **문서 업데이트**: 문서 스펙도 실제 모델명으로 업데이트 권장
 
+
