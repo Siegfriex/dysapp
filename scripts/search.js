@@ -6,8 +6,10 @@
 import {
   searchSimilar,
   searchText,
+  customSearch,
   saveItem,
   analyzeDesign,
+  getAnalysis,
   readFileAsBase64,
   validateImageFile,
   getLastAnalysisId,
@@ -25,11 +27,19 @@ import {
 // ============================================================================
 
 let searchResults = [];
+let customSearchResults = [];
 let currentFilters = {
   format: null,
   fixScope: null,
   minScore: null,
 };
+
+// Custom Search state
+let currentSearchQuery = null;
+let currentSearchStart = 1;
+let isLoadingMore = false;
+let hasMoreResults = true;
+let lastAnalysisData = null;
 
 // ============================================================================
 // DOM Elements
@@ -48,6 +58,56 @@ uploadInput.type = "file";
 uploadInput.accept = "image/png, image/jpeg";
 uploadInput.style.display = "none";
 document.body.appendChild(uploadInput);
+
+// ============================================================================
+// Query Generation Functions
+// ============================================================================
+
+/**
+ * Generate search query from analysis data
+ * Priority: ragSearchQueries > detectedKeywords > formatPrediction
+ */
+function generateSearchQuery(analysis) {
+  if (!analysis) return null;
+
+  // Priority 1: ragSearchQueries
+  if (analysis.ragSearchQueries && Array.isArray(analysis.ragSearchQueries) && analysis.ragSearchQueries.length > 0) {
+    return analysis.ragSearchQueries[0];
+  }
+
+  // Priority 2: detectedKeywords
+  if (analysis.detectedKeywords && Array.isArray(analysis.detectedKeywords) && analysis.detectedKeywords.length > 0) {
+    return analysis.detectedKeywords.join(" ");
+  }
+
+  // Priority 3: formatPrediction
+  if (analysis.formatPrediction && analysis.formatPrediction !== "Unknown") {
+    return `${analysis.formatPrediction} 디자인`;
+  }
+
+  return null;
+}
+
+/**
+ * Get last analysis data from localStorage and API
+ */
+async function getLastAnalysisData() {
+  const lastAnalysisId = getLastAnalysisId();
+  if (!lastAnalysisId) {
+    return null;
+  }
+
+  try {
+    const response = await getAnalysis(lastAnalysisId);
+    if (response.success && response.analysis) {
+      return response.analysis;
+    }
+  } catch (error) {
+    console.error("[Search] Failed to get last analysis:", error);
+  }
+
+  return null;
+}
 
 // ============================================================================
 // Search Functions
@@ -147,6 +207,128 @@ async function quickSearchFromLastAnalysis() {
 }
 
 /**
+ * Perform Custom Search using GCP Custom Search API
+ */
+async function performCustomSearch(query, start = 1) {
+  if (!query || query.trim().length < 2) {
+    toast.error("검색어를 2자 이상 입력해주세요");
+    return;
+  }
+
+  try {
+    if (start === 1) {
+      showLoading("관련 이미지 검색 중...");
+    }
+
+    const searchResult = await customSearch({
+      query: query.trim(),
+      start,
+      num: 10,
+    });
+
+    if (start === 1) {
+      hideLoading();
+    }
+
+    if (searchResult.success) {
+      if (start === 1) {
+        // Replace results for first page
+        customSearchResults = searchResult.items || [];
+        currentSearchQuery = query.trim();
+        currentSearchStart = 1;
+        hasMoreResults = searchResult.items.length >= 10;
+      } else {
+        // Append results for subsequent pages
+        customSearchResults = [...customSearchResults, ...(searchResult.items || [])];
+        hasMoreResults = searchResult.items.length >= 10;
+      }
+
+      renderCustomSearchResults();
+      
+      if (start === 1 && customSearchResults.length > 0) {
+        toast.success(`${customSearchResults.length}개의 관련 이미지를 찾았습니다`);
+      }
+    } else {
+      if (start === 1) {
+        hideLoading();
+        toast.error("검색 중 오류가 발생했습니다");
+      }
+    }
+  } catch (error) {
+    if (start === 1) {
+      hideLoading();
+    }
+    console.error("[Search] Custom search failed:", error);
+    toast.error("검색 중 오류가 발생했습니다");
+  } finally {
+    isLoadingMore = false;
+  }
+}
+
+/**
+ * Load more search results (infinite scroll)
+ */
+async function loadMoreSearchResults() {
+  if (isLoadingMore || !hasMoreResults || !currentSearchQuery) {
+    return;
+  }
+
+  isLoadingMore = true;
+  currentSearchStart += 10;
+  
+  await performCustomSearch(currentSearchQuery, currentSearchStart);
+}
+
+/**
+ * Auto search on page load based on last analysis
+ */
+async function autoSearchOnPageLoad() {
+  // Show initial loading state
+  if (resultsGrid) {
+    resultsGrid.innerHTML = `
+      <div class="no-results" style="grid-column: 1 / -1;">
+        <p>검색 중...</p>
+        <p class="no-results-hint">관련 이미지를 찾고 있습니다</p>
+      </div>
+    `;
+  }
+
+  const analysisData = await getLastAnalysisData();
+  
+  if (analysisData) {
+    lastAnalysisData = analysisData;
+    const query = generateSearchQuery(analysisData);
+    
+    if (query) {
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        performCustomSearch(query, 1);
+      }, 300);
+    } else {
+      // No query available, show empty state
+      if (resultsGrid) {
+        resultsGrid.innerHTML = `
+          <div class="no-results" style="grid-column: 1 / -1;">
+            <p>검색할 키워드를 찾지 못했습니다</p>
+            <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+          </div>
+        `;
+      }
+    }
+  } else {
+    // No analysis data, show empty state
+    if (resultsGrid) {
+      resultsGrid.innerHTML = `
+        <div class="no-results" style="grid-column: 1 / -1;">
+          <p>검색 결과가 없습니다</p>
+          <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+        </div>
+      `;
+    }
+  }
+}
+
+/**
  * Perform text-based search
  */
 async function performTextSearch(query) {
@@ -191,7 +373,75 @@ async function performTextSearch(query) {
 // ============================================================================
 
 /**
- * Render search results grid
+ * Render Custom Search results
+ */
+function renderCustomSearchResults() {
+  if (!resultsGrid) {
+    console.warn("[Search] Results grid not found");
+    return;
+  }
+
+  // Keep the page-dim element
+  const pageDim = resultsGrid.querySelector(".page-dim");
+
+  if (customSearchResults.length === 0) {
+    resultsGrid.innerHTML = `
+      <div class="no-results">
+        <p>관련 이미지를 찾지 못했습니다</p>
+        <p class="no-results-hint">다른 키워드로 검색해보세요</p>
+      </div>
+    `;
+    if (pageDim) resultsGrid.appendChild(pageDim);
+    // Setup observer even for empty state (in case results load later)
+    setupInfiniteScrollObserver();
+    return;
+  }
+
+  // Clear existing images but keep structure
+  resultsGrid.innerHTML = customSearchResults
+    .map((result, index) => createCustomSearchImage(result, index))
+    .join("");
+
+  // Add loading indicator at the bottom if more results available
+  if (hasMoreResults) {
+    const loadingIndicator = document.createElement("div");
+    loadingIndicator.className = "custom-search-loading";
+    loadingIndicator.id = "customSearchLoadingIndicator";
+    loadingIndicator.innerHTML = `
+      <div style="text-align: center; padding: 20px; color: #7C7895;">
+        <p>더 많은 이미지 불러오는 중...</p>
+      </div>
+    `;
+    resultsGrid.appendChild(loadingIndicator);
+  }
+
+  if (pageDim) resultsGrid.appendChild(pageDim);
+
+  // Setup infinite scroll observer (always call, even if no more results)
+  setupInfiniteScrollObserver();
+}
+
+/**
+ * Create Custom Search result image HTML
+ */
+function createCustomSearchImage(result, index) {
+  return `
+    <div class="searchImgCard" data-id="${result.id}" data-index="${index}" data-source="custom" data-search-query="${currentSearchQuery || ''}">
+      <img src="${result.imageUrl || result.thumbnailUrl || ''}" alt="${result.title || '이미지'}" class="searchImg" loading="lazy" title="${result.title || ''}">
+      <div class="imgOverlay">
+        <button class="img-btn shareBtn" data-action="share" aria-label="공유">
+          <img src="./img/share.svg" alt="" class="shareIcon">
+        </button>
+        <button class="img-btn downBtn" data-action="download" aria-label="다운로드">
+          <img src="./img/download.svg" alt="" class="downIcon">
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render search results grid (for Firestore results)
  */
 function renderSearchResults() {
   if (!resultsGrid) {
@@ -458,6 +708,7 @@ function setupEventListeners() {
       const action = e.target.closest("[data-action]")?.dataset.action;
       const cardId = card.dataset.id;
       const cardIndex = parseInt(card.dataset.index, 10);
+      const source = card.dataset.source;
 
       if (action === "share") {
         e.stopPropagation();
@@ -467,10 +718,21 @@ function setupEventListeners() {
         handleDownload(cardId);
       } else {
         // Card click - open modal
-        if (cardIndex >= 0 && cardIndex < searchResults.length) {
-          const result = searchResults[cardIndex];
-          if (result) {
-            openResultModal(result);
+        if (source === "custom") {
+          // Custom Search result
+          if (cardIndex >= 0 && cardIndex < customSearchResults.length) {
+            const result = customSearchResults[cardIndex];
+            if (result) {
+              openResultModal(result);
+            }
+          }
+        } else {
+          // Firestore result
+          if (cardIndex >= 0 && cardIndex < searchResults.length) {
+            const result = searchResults[cardIndex];
+            if (result) {
+              openResultModal(result);
+            }
           }
         }
       }
@@ -591,8 +853,25 @@ async function handleShare(resultId) {
  */
 async function handleDownload(resultId) {
   try {
-    const result = searchResults.find((r) => r.id === resultId);
-    if (!result || !result.imageUrl) {
+    // Check if it's a custom search result
+    const modalBox = document.getElementById("searchResultModalBox");
+    const source = modalBox?.dataset.resultSource;
+    
+    let result;
+    let imageUrl;
+    let fileName;
+    
+    if (source === "custom") {
+      result = customSearchResults.find((r) => r.id === resultId);
+      imageUrl = result?.imageUrl || result?.thumbnailUrl;
+      fileName = result?.title || `image_${resultId}.jpg`;
+    } else {
+      result = searchResults.find((r) => r.id === resultId);
+      imageUrl = result?.imageUrl;
+      fileName = result?.fileName || `design_${resultId}.png`;
+    }
+    
+    if (!result || !imageUrl) {
       toast.error("이미지 URL을 찾을 수 없습니다");
       return;
     }
@@ -600,7 +879,7 @@ async function handleDownload(resultId) {
     showLoading("다운로드 준비 중...");
 
     // Fetch image
-    const response = await fetch(result.imageUrl);
+    const response = await fetch(imageUrl);
     if (!response.ok) {
       throw new Error("Failed to fetch image");
     }
@@ -609,7 +888,7 @@ async function handleDownload(resultId) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = result.fileName || `design_${resultId}.png`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -625,6 +904,82 @@ async function handleDownload(resultId) {
 }
 
 /**
+ * Generate recommendation reason for Custom Search result
+ */
+function generateRecommendationReason(searchResult, query, analysis) {
+  if (!query || !analysis) {
+    return "이미지는 검색 결과입니다.";
+  }
+
+  const reasons = [];
+  
+  // Search query reason
+  reasons.push(`이 이미지는 '${query}' 검색어로 찾았습니다.`);
+
+  // Keyword matching
+  if (analysis.detectedKeywords && Array.isArray(analysis.detectedKeywords)) {
+    const matchedKeywords = analysis.detectedKeywords.filter(keyword => 
+      query.toLowerCase().includes(keyword.toLowerCase()) || 
+      keyword.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    if (matchedKeywords.length > 0) {
+      reasons.push(`분석 결과의 키워드 '${matchedKeywords.join(", ")}'와 관련이 있습니다.`);
+    }
+  }
+
+  // Format prediction
+  if (analysis.formatPrediction && analysis.formatPrediction !== "Unknown") {
+    reasons.push(`분석된 디자인의 ${analysis.formatPrediction} 형식과 유사한 스타일입니다.`);
+  }
+
+  return reasons.join(" ");
+}
+
+// Store observer instance to avoid duplicates
+let infiniteScrollObserver = null;
+
+/**
+ * Setup infinite scroll observer
+ */
+function setupInfiniteScrollObserver() {
+  // Disconnect existing observer if any
+  if (infiniteScrollObserver) {
+    infiniteScrollObserver.disconnect();
+    infiniteScrollObserver = null;
+  }
+
+  // Find loading indicator or use last card as trigger
+  const loadingIndicator = document.getElementById("customSearchLoadingIndicator");
+  const lastCard = resultsGrid?.querySelector(".searchImgCard:last-child");
+  
+  // Use loading indicator if available, otherwise use last card
+  const targetElement = loadingIndicator || lastCard;
+  
+  if (!targetElement || !resultsGrid) {
+    // If no target element, try again after a short delay (for initial render)
+    setTimeout(() => {
+      setupInfiniteScrollObserver();
+    }, 100);
+    return;
+  }
+
+  // Create new observer
+  infiniteScrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && hasMoreResults && !isLoadingMore && currentSearchQuery) {
+        loadMoreSearchResults();
+      }
+    });
+  }, {
+    rootMargin: "200px", // Start loading 200px before reaching the element
+    threshold: 0.1,
+  });
+
+  infiniteScrollObserver.observe(targetElement);
+}
+
+/**
  * Open result modal
  */
 function openResultModal(result) {
@@ -637,31 +992,91 @@ function openResultModal(result) {
     return;
   }
 
-  // Populate modal content
-  const imageEl = document.getElementById("searchModalImage");
-  const titleEl = document.getElementById("searchModalTitle");
-  const similarityEl = document.getElementById("searchModalSimilarity");
-  const scoreEl = document.getElementById("searchModalScore");
-  const ocrTextEl = document.getElementById("searchModalOcrText");
-  const ocrSection = document.getElementById("searchModalOcr");
-
-  if (imageEl) imageEl.src = result.imageUrl || "";
-  if (imageEl) imageEl.alt = result.fileName || "";
-  if (titleEl) titleEl.textContent = result.fileName || "이미지";
-  if (similarityEl) similarityEl.textContent = result.similarityLabel || "유사도";
-  if (scoreEl) scoreEl.textContent = `${result.score || 0}점`;
+  // Check if this is a Custom Search result
+  const isCustomSearch = result.link || result.contextLink || result.displayLink;
   
-  // OCR text (if available)
-  if (ocrTextEl && result.ocrText) {
-    ocrTextEl.textContent = result.ocrText;
-    if (ocrSection) ocrSection.style.display = "block";
-  } else if (ocrSection) {
-    ocrSection.style.display = "none";
-  }
+  if (isCustomSearch) {
+    // Custom Search result
+    const imageEl = document.getElementById("searchModalImage");
+    const titleEl = document.getElementById("searchModalTitle");
+    const similarityEl = document.getElementById("searchModalSimilarity");
+    const scoreEl = document.getElementById("searchModalScore");
+    const ocrTextEl = document.getElementById("searchModalOcrText");
+    const ocrSection = document.getElementById("searchModalOcr");
 
-  // Store current result for action buttons
-  modalBox.dataset.resultId = result.id;
-  modalBox.dataset.resultIndex = searchResults.indexOf(result).toString();
+    if (imageEl) imageEl.src = result.imageUrl || result.thumbnailUrl || "";
+    if (imageEl) imageEl.alt = result.title || "이미지";
+    if (titleEl) titleEl.textContent = result.title || "이미지";
+    
+    // Generate recommendation reason
+    const reasonText = generateRecommendationReason(result, currentSearchQuery, lastAnalysisData);
+    
+    if (similarityEl) {
+      similarityEl.textContent = "추천 이미지";
+      similarityEl.title = reasonText;
+    }
+    
+    if (scoreEl) {
+      scoreEl.textContent = result.displayLink || "";
+    }
+    
+    // Show snippet as OCR text
+    if (ocrTextEl && result.snippet) {
+      ocrTextEl.textContent = result.snippet;
+      if (ocrSection) ocrSection.style.display = "block";
+    } else if (ocrSection) {
+      ocrSection.style.display = "none";
+    }
+
+    // Show recommendation reason
+    const recommendationSection = document.getElementById("searchModalRecommendation");
+    const recommendationTextEl = document.getElementById("searchModalRecommendationText");
+    if (recommendationTextEl) {
+      recommendationTextEl.textContent = reasonText;
+    }
+    if (recommendationSection) {
+      recommendationSection.style.display = "block";
+    }
+
+    // Store recommendation reason
+    modalBox.dataset.recommendationReason = reasonText;
+    modalBox.dataset.resultId = result.id;
+    modalBox.dataset.resultIndex = customSearchResults.indexOf(result).toString();
+    modalBox.dataset.resultSource = "custom";
+  } else {
+    // Firestore result (existing logic)
+    const imageEl = document.getElementById("searchModalImage");
+    const titleEl = document.getElementById("searchModalTitle");
+    const similarityEl = document.getElementById("searchModalSimilarity");
+    const scoreEl = document.getElementById("searchModalScore");
+    const ocrTextEl = document.getElementById("searchModalOcrText");
+    const ocrSection = document.getElementById("searchModalOcr");
+
+    if (imageEl) imageEl.src = result.imageUrl || "";
+    if (imageEl) imageEl.alt = result.fileName || "";
+    if (titleEl) titleEl.textContent = result.fileName || "이미지";
+    if (similarityEl) similarityEl.textContent = result.similarityLabel || "유사도";
+    if (scoreEl) scoreEl.textContent = `${result.score || 0}점`;
+    
+    // OCR text (if available)
+    if (ocrTextEl && result.ocrText) {
+      ocrTextEl.textContent = result.ocrText;
+      if (ocrSection) ocrSection.style.display = "block";
+    } else if (ocrSection) {
+      ocrSection.style.display = "none";
+    }
+
+    // Hide recommendation section for Firestore results
+    const recommendationSection = document.getElementById("searchModalRecommendation");
+    if (recommendationSection) {
+      recommendationSection.style.display = "none";
+    }
+
+    // Store current result for action buttons
+    modalBox.dataset.resultId = result.id;
+    modalBox.dataset.resultIndex = searchResults.indexOf(result).toString();
+    modalBox.dataset.resultSource = "firestore";
+  }
 
   // Show modal
   modalBg.classList.add("show");
@@ -838,6 +1253,8 @@ function init() {
   console.log("[Search] Initializing search page...");
   setupEventListeners();
   applyFiltersFromStorage();
+  // Auto search on page load
+  autoSearchOnPageLoad();
 }
 
 // Wait for app initialization

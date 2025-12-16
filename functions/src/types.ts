@@ -329,6 +329,33 @@ export interface GetUserProfileResponse {
 }
 
 // ============================================================================
+// Custom Search API Types
+// ============================================================================
+
+export interface CustomSearchRequest {
+  query: string;
+  start?: number;
+  num?: number;
+}
+
+export interface CustomSearchResponse {
+  success: boolean;
+  items: CustomSearchItem[];
+  totalResults: number;
+  searchTime: number;
+}
+
+export interface CustomSearchItem {
+  id: string;
+  imageUrl: string;
+  title: string;
+  snippet: string;
+  displayLink: string;
+  contextLink: string;
+  thumbnailUrl?: string;
+}
+
+// ============================================================================
 // BigQuery Row Types (snake_case) - For v2+
 // ============================================================================
 

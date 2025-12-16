@@ -44,25 +44,8 @@
                 </div>
                 <button class="filter" onclick="location.href='filter.html'"><img src="./img/filter.svg" alt="" class="filterIcon"></button>
                 <div class="fileBox">
-                    <button class="img-btn downBtn">
-                        <img src="./img/download.svg" alt="" class="downIcon">
-                    </button>
-                    <button class="img-btn shareBtn">
-                        <img src="./img/share.svg" alt="" class="shareIcon">
-                    </button>
                     <div class="searchImgBox">
-                        <img src="./img/ex1.png" alt="" class="searchImg">
-                        <img src="./img/ex2.png" alt="" class="searchImg">
-                        <img src="./img/ex3.png" alt="" class="searchImg">
-                        <img src="./img/ex4.png" alt="" class="searchImg">
-                        <img src="./img/ex5.png" alt="" class="searchImg">
-                        <img src="./img/ex6.png" alt="" class="searchImg">
-                        <img src="./img/ex7.png" alt="" class="searchImg">
-                        <img src="./img/ex8.png" alt="" class="searchImg">
-                        <img src="./img/ex9.png" alt="" class="searchImg">
-                        <img src="./img/ex10.png" alt="" class="searchImg">
-                        <img src="./img/ex11.png" alt="" class="searchImg">
-                        <img src="./img/ex12.png" alt="" class="searchImg">
+                        <!-- 동적으로 검색 결과가 렌더링됩니다 -->
                         <div class="page-dim"></div>
                     </div>
                 </div>
@@ -89,6 +72,10 @@
                     <div class="search_modal_ocr" id="searchModalOcr">
                         <p class="search_modal_ocr_label">인식된 텍스트</p>
                         <p class="search_modal_ocr_text" id="searchModalOcrText"></p>
+                    </div>
+                    <div class="search_modal_recommendation" id="searchModalRecommendation" style="display: none;">
+                        <p class="search_modal_recommendation_label">추천 이유</p>
+                        <p class="search_modal_recommendation_text" id="searchModalRecommendationText"></p>
                     </div>
                     <div class="search_modal_actions">
                         <button class="search_modal_action_btn save_btn" id="searchModalSaveBtn">

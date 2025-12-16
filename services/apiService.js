@@ -15,6 +15,7 @@ const FUNCTION_NAMES = {
   CHAT_WITH_MENTOR: "chatWithMentor",
   SEARCH_SIMILAR: "searchSimilar",
   SEARCH_TEXT: "searchText",
+  CUSTOM_SEARCH: "customSearch",
   SAVE_ITEM: "saveItem",
   GET_ANALYSES: "getAnalyses",
   GET_ANALYSIS: "getAnalysis",
@@ -218,6 +219,30 @@ export async function searchText(params) {
     filterFormat: params.filterFormat,
     filterFixScope: params.filterFixScope,
     minScore: params.minScore,
+  });
+}
+
+/**
+ * Search images using GCP Custom Search API
+ * @param {Object} params
+ * @param {string} params.query - Search query string
+ * @param {number} [params.start=1] - Pagination start index
+ * @param {number} [params.num=10] - Number of results per page
+ * @returns {Promise<Object>} Search results
+ */
+export async function customSearch(params) {
+  await ensureAuth();
+
+  const { query } = params;
+
+  if (!query || query.trim().length < 2) {
+    throw new Error("Query must be at least 2 characters");
+  }
+
+  return callFunction(FUNCTION_NAMES.CUSTOM_SEARCH, {
+    query: query.trim(),
+    start: params.start || 1,
+    num: params.num || 10,
   });
 }
 

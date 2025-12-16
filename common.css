@@ -1,6 +1,13 @@
 @charset "UTF-8";
 /*index.html에 선언된 스타일시트*/
 
+/* =========================================
+   Design Tokens (CSS Variables)
+   ========================================= 
+   모든 디자인 값의 단일 소스입니다.
+   색상, 타이포그래피, 간격, 그림자 등을 관리합니다.
+*/
+
 :root {
     --ti-cursor-font-weight: .5px;
     --ti-cursor-transform: translateX(-1.5rem);
@@ -9,7 +16,12 @@
     --ti-cursor-height: 5px;
 
     /*공통수치 통합관리*/
-    --union-line-height: 1.35;
+    --line-height-base: 1.6; /* 기본 본문 행간 (body, 일반 텍스트) */
+    --line-height-tight: 1.35; /* 타이트한 행간 (작은 텍스트, 라벨) */
+    --line-height-relaxed: 1.8; /* 여유로운 행간 (긴 문단) */
+    
+    /* Legacy: 하위 호환성을 위해 유지 (사용처 점검 후 제거 예정) */
+    --union-line-height: var(--line-height-tight);
 
     /*컬러 관리*/
     --background: #ffffff;
@@ -62,9 +74,20 @@
     
     --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
     --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Usage Guide:
+     * --line-height-base: 본문, 긴 텍스트, 일반 콘텐츠
+     * --line-height-tight: 작은 텍스트, 라벨, 컴팩트한 UI
+     * --line-height-relaxed: 여유로운 레이아웃, 긴 문단
+     */
 }
 
-/* Animations */
+/* =========================================
+   Animations & Keyframes
+   ========================================= 
+   재사용 가능한 애니메이션 정의
+*/
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -82,6 +105,12 @@
 }
 
 
+/* =========================================
+   Base Styles & Reset
+   ========================================= 
+   전역 스타일, 리셋, 기본 타이포그래피
+*/
+
 * {
     font-family: 'Rubik', 'SUITE', 'sans-serif';
     margin: 0;
@@ -90,7 +119,7 @@
 /* Ensure minimum readable font sizes */
 body {
     font-size: max(var(--text-regular), var(--text-regular-min));
-    line-height: 1.6;
+    line-height: var(--line-height-base);
     letter-spacing: -0.02em;
     word-break: keep-all;
     color: var(--navy);
@@ -101,6 +130,12 @@ body {
     position: relative;
     margin-left: 4vw;
 }
+
+/* =========================================
+   Custom Scrollbar
+   ========================================= 
+   브랜드 톤에 맞춘 커스텀 스크롤바
+*/
 
 ::-webkit-scrollbar {
     /* display: none; */
@@ -120,7 +155,11 @@ body {
     background: #94a3b8;
 }
 
-/********************************navigation***************************/
+/* =========================================
+   Navigation Components
+   ========================================= 
+   사이드바, 네비게이션 메뉴, 설정 박스
+*/
 
 
 .layout {
@@ -249,7 +288,11 @@ body {
 
 
 
-/***********************index****************************/
+/* =========================================
+   Index/Upload Page Components
+   ========================================= 
+   업로드 페이지의 주요 컴포넌트
+*/
 
 
 main {
@@ -460,7 +503,11 @@ main {
   }
 
 
-/***************************************프롬포트************************************/
+/* =========================================
+   Prompt Input Components
+   ========================================= 
+   프롬프트 입력창, 전송 버튼, 추천 제안
+*/
 
 /* .prompt_box{
     width: 30vw;
@@ -559,7 +606,11 @@ main {
 
 
 
-/*************************분석 페이지******************************/
+/* =========================================
+   Analysis Page Components
+   ========================================= 
+   분석 결과 페이지의 레이아웃 및 데이터 박스
+*/
 .Report_main {
     display: inline-flex;
     /* display: flex; */
@@ -600,21 +651,20 @@ main {
 
 .H1Text {
     font-size: var(--text-regular);
-    /* margin-left: 34vw; */
-    margin-bottom: 2vw;
+    width: 87vw;
+    margin: 0 auto 2vw auto;
     color: var(--purpleC);
     font-weight: 600;
+    text-align: center;
 }
 
 .main_percent {
-    /* margin-top: 1.6vw; */
     height: 4vw;
-    margin-left: 1vw;
-    width: 86vw;
+    width: 87vw;
+    margin: 0 auto;
     box-sizing: border-box;
     display: inline-flex;
     align-items: flex-end;
-    /* padding: 0px 1vw; */
     background: var(--background);
     border-radius: 2vw;
 }
@@ -681,7 +731,7 @@ main {
 
 .overall-analysis-text {
     font-size: var(--text-regular);
-    line-height: 1.6;
+    line-height: var(--line-height-base);
     color: var(--navy);
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -729,7 +779,7 @@ main {
 
 .sw-list li {
     font-size: var(--text-small);
-    line-height: 1.6;
+    line-height: var(--line-height-base);
     color: var(--navy);
     margin-bottom: 0.8vw;
     padding-left: 1.2vw;
@@ -753,7 +803,8 @@ main {
 }
 
 .dataBox_wrap {
-    margin-top: .3vw;
+    width: 87vw;
+    margin: .3vw auto 0 auto;
     display: inline-flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -1105,7 +1156,11 @@ main {
 }
 
 
-/* 분석 -> 프롬포트 추가 입력 */
+/* =========================================
+   Chat Interface Components
+   ========================================= 
+   AI 멘토 채팅 인터페이스
+*/
 
 .add_prompt {
     margin: 0 auto;
@@ -1151,6 +1206,7 @@ main {
     opacity: 0; /* 초기 상태 투명 */
     animation: fadeInUp 0.5s var(--ease-smooth) forwards;
     transform-origin: bottom center;
+    will-change: opacity, transform; /* GPU 가속 최적화 */
 }
 
 .bubble_ai {
@@ -1300,7 +1356,11 @@ main {
 
 
 
-/* detail modal */
+/* =========================================
+   Modal Components
+   ========================================= 
+   상세 정보 모달, 검색 결과 모달
+*/
 #modalBox {
     position: relative;
 }
@@ -1449,10 +1509,35 @@ main {
 .search_modal_ocr_text {
     font-size: var(--text-semi-small);
     color: var(--navy);
-    line-height: 1.6;
+    line-height: var(--line-height-base);
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.search_modal_recommendation {
+    margin-top: 1.5vw;
+    padding-top: 1.5vw;
+    border-top: 1px solid var(--purpleB);
+}
+
+.search_modal_recommendation_label {
+    font-size: var(--text-medium);
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 0.5vw;
+}
+
+.search_modal_recommendation_text {
+    font-size: var(--text-small);
+    color: var(--purpleC);
+    line-height: var(--line-height-relaxed);
+    margin-top: 0.5vw;
+    word-break: break-word;
+    padding: 1vw;
+    background: var(--purpleG);
+    border-radius: 0.5vw;
+    border-left: 3px solid var(--purpleMain);
 }
 
 .search_modal_actions {
@@ -1577,7 +1662,11 @@ main {
     line-height: 1.3vw;
 }
 
-/* 분석 페이지 프롬포트 */
+/* =========================================
+   Analysis Page Chat Input
+   ========================================= 
+   분석 페이지 하단 채팅 입력창
+*/
 
 .analyze_prompt_box {
     position: fixed;
@@ -1689,7 +1778,11 @@ main {
 
 
 
-/* search Tab */
+/* =========================================
+   Search Tab Components
+   ========================================= 
+   검색 페이지의 주요 컴포넌트
+*/
 .search_main {
     display: inline-flex;
     width: 95.5vw;
@@ -1829,6 +1922,8 @@ main {
     width: 89vw;
     height: fit-content;
     min-height: 45vw;
+    max-height: 80vh;
+    overflow-y: auto;
     margin-top: -.5vw;
     padding: 1.3vw 1vw 1vw 1vw;
     background-color: #ffffff;
@@ -1848,14 +1943,15 @@ main {
 
 .searchImgCard {
     position: relative;
-    margin: .6vw;
-    width: 13.6vw;
+    width: 100%;
+    aspect-ratio: 1;
     border-radius: 1vw;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
     box-shadow: var(--shadow-sm);
     background: white;
+    will-change: transform; /* GPU 가속 최적화 */
 }
 
 .searchImgCard:hover {
@@ -2131,7 +2227,11 @@ main {
 
 
 
-/* filter tab */
+/* =========================================
+   Filter Tab Components
+   ========================================= 
+   필터 페이지의 주요 컴포넌트
+*/
 
 .filter_main {
     display: inline-flex;
@@ -2865,4 +2965,508 @@ input[type="range"] {
 .filterDelete{
     justify-content: center;
     margin: 2vw 0 .5vw 0 ;
+}
+
+/* =========================================
+   Responsive Design & Robustness
+   ========================================= */
+
+/* Tablet Support (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .wrap { margin-left: 0; }
+    
+    /* Sidebar: Compact but still visible */
+    .sidebar { 
+        width: 5vw; 
+        padding: 1vw 0;
+    }
+    
+    .sidebar img, .mypageIcon {
+        width: 2vw;
+    }
+    
+    /* Main Content Adjustments */
+    .Report_main, .Report { 
+        width: 95vw; 
+        padding: 3vw 2.5vw 8vw 2.5vw; 
+        box-sizing: border-box; 
+    }
+    
+    /* Consistent Layout Width */
+    .H1Text,
+    .main_percent,
+    .overall-analysis-section {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    /* Data Boxes: 2-column grid */
+    .dataBox_wrap { 
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5vw;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    .dataBox { 
+        width: 100%; 
+        margin: 0;
+        min-width: 0; /* Grid에서 자동 크기 조정 */
+    }
+    
+    .aiSuggestion {
+        width: 100%;
+        grid-column: 1 / -1; /* Full width */
+    }
+    
+    /* Analysis Page Adjustments */
+    .analyze_prompt_box { 
+        width: 90vw; 
+        left: 5vw; 
+        bottom: 4vh; 
+        margin-left: 0;
+    }
+    
+    .analyze_prompt { 
+        width: 100%; 
+        padding: 1.2vw 0 0.4vw 1.5vw;
+    }
+    
+    .analyze_send_btn { 
+        right: 1.5vw; 
+        width: 2.5vw;
+        height: 2.5vw;
+    }
+    
+    /* Chat Container */
+    .chat-container {
+        max-height: 60vh;
+        padding: 1.2vw;
+    }
+    
+    /* Touch Target Optimization */
+    button, .sug_li, .dataBox {
+        min-height: 44px; /* iOS 권장 터치 타겟 */
+    }
+    
+    /* Modal Adjustments */
+    .modal_box {
+        width: 70vw;
+        max-width: 600px;
+    }
+    
+    .search_result_modal_box {
+        width: 75vw;
+        max-width: 800px;
+    }
+}
+
+/* Mobile Support (max-width: 768px) */
+@media (max-width: 768px) {
+    .wrap { margin-left: 0; }
+    
+    /* Navigation Bottom Bar Style */
+    .sidebar { 
+        width: 100%; 
+        height: auto; 
+        bottom: 0; 
+        top: auto; 
+        flex-direction: row; 
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        z-index: 100;
+    }
+    
+    .nav_ul { flex-direction: row; gap: 20px; margin: 0; }
+    .nav_ul3 { margin-top: 0; padding-bottom: 0; }
+    .logo_ul { display: none; } 
+    
+    .Report_main, .Report { 
+        width: 100vw; 
+        padding: 20px 5vw 100px 5vw; 
+        box-sizing: border-box; 
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Consistent Layout Width for Mobile */
+    .H1Text,
+    .main_percent,
+    .overall-analysis-section,
+    .dataBox_wrap {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    
+    /* Analysis Page Adjustments */
+    .analyze_prompt_box { 
+        width: 90vw; 
+        left: 5vw; 
+        bottom: 80px; 
+        margin-left: 0;
+    }
+    .analyze_prompt { width: 100%; position: relative; }
+    .analyze_send_btn { right: 10px; position: absolute; }
+    
+    .dataBox_wrap { 
+        display: flex; 
+        flex-direction: column; 
+        width: 100%; 
+    }
+    
+    .dataBox, .aiSuggestion { 
+        width: 100%; 
+        height: auto; 
+        min-height: 150px; 
+        margin: 10px 0; 
+        padding: 20px;
+        box-sizing: border-box;
+    }
+    
+    .main_percent { 
+        width: 100%; 
+        height: 40px; 
+        margin-left: 0; 
+        margin-right: 0;
+    }
+    .main_percent .per, .per2, .per3, .per4 { height: 40px; }
+    
+    .add_prompt { width: 100%; padding-bottom: 80px; }
+}
+
+/* Empty State & Error UI */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--purpleGy2);
+    width: 100%;
+    min-height: 300px;
+    background: var(--background);
+    border-radius: 2vw;
+    border: 0.1vw solid var(--purpleB);
+}
+
+/* Error Type Variants */
+.empty-state-network {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+}
+
+.empty-state-notfound {
+    border-color: #6366f1;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ffffff 100%);
+}
+
+.empty-state-timeout {
+    border-color: #f97316;
+    background: linear-gradient(135deg, #fed7aa 0%, #ffffff 100%);
+}
+
+.empty-state-server {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #fee2e2 0%, #ffffff 100%);
+}
+
+.empty-state-unknown {
+    border-color: var(--purpleGy2);
+    background: var(--background);
+}
+
+.empty-state-icon {
+    width: 6vw;
+    height: 6vw;
+    margin-bottom: 1.5vw;
+    opacity: 0.6;
+    background-color: var(--purpleGy);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5vw;
+    color: var(--purpleMain);
+}
+
+/* Error Type Icons */
+.empty-state-icon-network::before {
+    content: "📡";
+    font-size: 2.5vw;
+}
+
+.empty-state-icon-notfound::before {
+    content: "🔍";
+    font-size: 2.5vw;
+}
+
+.empty-state-icon-timeout::before {
+    content: "⏱";
+    font-size: 2.5vw;
+}
+
+.empty-state-icon-server::before {
+    content: "⚠";
+    font-size: 2.5vw;
+}
+
+.empty-state-icon-error::before {
+    content: "❌";
+    font-size: 2.5vw;
+}
+
+.empty-state-title {
+    font-size: var(--text-medium);
+    font-weight: 600;
+    color: var(--purpleC);
+    margin-bottom: 0.5vw;
+}
+
+.empty-state-desc {
+    font-size: var(--text-small);
+    max-width: 400px;
+    margin-bottom: 2vw;
+    line-height: var(--line-height-base);
+}
+
+.empty-state-detail {
+    font-size: 0.8em;
+    color: #aaa;
+    display: block;
+    margin-top: 0.5vw;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+.btn-retry {
+    padding: 0.8vw 2vw;
+    background: var(--purpleMain);
+    color: white;
+    border: none;
+    border-radius: 2vw;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: var(--text-small);
+    transition: transform 0.2s var(--ease-smooth), box-shadow 0.2s var(--ease-smooth);
+}
+
+.btn-retry:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+/* =========================================
+   Skeleton UI System
+   ========================================= */
+
+/* Base Skeleton Animation */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Base Skeleton Class */
+.skeleton {
+    background: #f0f0f7;
+    background-image: linear-gradient(90deg, #f0f0f7 0%, #f8f8fc 50%, #f0f0f7 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.5rem;
+    color: transparent !important;
+    pointer-events: none;
+    will-change: background-position; /* GPU 가속 */
+    contain: layout style paint; /* 성능 최적화: 렌더링 격리 */
+}
+
+/* Skeleton Text Variants */
+.skeleton-text {
+    height: 1.2em;
+    margin-bottom: 0.5em;
+    display: inline-block;
+}
+
+.skeleton-text-header {
+    width: 60%;
+    height: 1.5em;
+    margin-bottom: 1vw;
+}
+
+.skeleton-text-desc {
+    width: 90%;
+    height: 1em;
+}
+
+.skeleton-text-sm {
+    width: 40%;
+    height: 1em;
+}
+
+.skeleton-text-md {
+    width: 60%;
+    height: 1.2em;
+}
+
+.skeleton-text-lg {
+    width: 80%;
+    height: 1.4em;
+}
+
+/* Skeleton Box Variants */
+.skeleton-box {
+    width: 100%;
+    height: 100%;
+    min-height: 50px;
+    display: block;
+}
+
+.skeleton-box-sm {
+    height: 3vw;
+    min-height: 40px;
+}
+
+.skeleton-box-md {
+    height: 6vw;
+    min-height: 80px;
+}
+
+.skeleton-box-lg {
+    height: 10vw;
+    min-height: 120px;
+}
+
+/* Skeleton Tag/Percent Variants */
+.skeleton-tag {
+    height: 4vw;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skeleton-tag-per1 {
+    width: 50%;
+}
+
+.skeleton-tag-per2 {
+    width: 25%;
+}
+
+.skeleton-tag-per3 {
+    width: 15%;
+}
+
+.skeleton-tag-per4 {
+    width: 10%;
+}
+
+/* Skeleton Circle */
+.skeleton-circle {
+    border-radius: 50%;
+    width: 6vw;
+    height: 6vw;
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Custom Scrollbar (Refined) */
+::-webkit-scrollbar {
+    width: 0.5vw;
+    height: 0.5vw;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--purpleGy);
+    border-radius: 0.25vw;
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--purpleGy2);
+}
+
+/* =========================================
+   Accessibility (A11y) Utilities
+   ========================================= */
+
+/* Focus Management for Accessibility */
+:focus-visible {
+    outline: 3px solid var(--purpleMain);
+    outline-offset: 3px;
+    border-radius: 0.2rem;
+}
+
+/* Screen Reader Only Content */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Skip to Main Content Link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--purpleMain);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 10000;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Enhanced Focus Styles for Interactive Elements */
+button:focus-visible,
+.dataBox:focus-visible,
+.sug_li:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+    outline: 3px solid var(--purpleMain);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 1px var(--purpleF);
+}
+
+/* Keyboard Navigation: Tab Order Visual Indicator */
+*:focus-visible {
+    outline-color: var(--purpleMain);
+    outline-width: 3px;
+    outline-style: solid;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    :focus-visible {
+        outline-width: 4px;
+        outline-color: #000000;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

@@ -33,6 +33,7 @@ export { chatWithMentor } from "./chat/chatWithMentor";
 export { searchSimilar } from "./search/searchSimilar";
 export { searchText } from "./search/searchText";
 export { saveItem } from "./search/saveItem";
+export { customSearch } from "./search/customSearch";
 
 // User/Profile Functions
 export {

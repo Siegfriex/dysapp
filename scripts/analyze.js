@@ -25,8 +25,9 @@ let currentAnalysis = null;
 let chatSessionId = null;
 
 // ============================================================================
-// DOM Elements
+// DOM Elements (Cached)
 // ============================================================================
+// DOM 요소를 한 번만 쿼리하여 성능 최적화
 
 const mainDescription = document.getElementById("mainDescription");
 const mainTags = document.getElementById("mainTags");
@@ -37,6 +38,24 @@ const chatInput = document.getElementById("chatInput");
 const chatSendBtn = document.getElementById("chatSendBtn");
 const chatContainer = document.getElementById("chatContainer");
 const suggestionBox = document.getElementById("suggestionBox");
+
+// Additional cached elements (lazy loaded when needed)
+let cachedModalElements = null;
+function getModalElements() {
+  if (!cachedModalElements) {
+    cachedModalElements = {
+      modalBg: document.getElementById("detail_modalBg"),
+      modalTitle: document.getElementById("modalTitle"),
+      modalDescription: document.getElementById("modalDescription"),
+      modalCriteria: document.getElementById("modalCriteria"),
+      modalElements: document.getElementById("modalElements"),
+      modalDetailAnalysis: document.getElementById("modalDetailAnalysis"),
+      modalCloseBtn: document.getElementById("modalCloseBtn"),
+      modalBox: document.getElementById("modalBox")
+    };
+  }
+  return cachedModalElements;
+}
 
 // ============================================================================
 // Load Analysis
@@ -56,7 +75,7 @@ async function loadAnalysis() {
   }
 
   try {
-    showLoading("분석 결과 불러오는 중...");
+    // showLoading("분석 결과 불러오는 중..."); // Skeleton replaces loading spinner
 
     const response = await getAnalysis(analysisId);
     if (!response.success || !response.analysis) {
@@ -73,15 +92,214 @@ async function loadAnalysis() {
     // Get stored session ID for continuing chat
     chatSessionId = getStoredSessionId(analysisId);
 
-    hideLoading();
-
-    // Render results
+    // Hide Skeleton & Render results
+    hideSkeleton();
     renderAnalysisResults();
   } catch (error) {
-    hideLoading();
     console.error("[Analyze] Failed to load:", error);
-    toast.error("분석 결과를 불러오지 못했습니다");
+    const errorType = getErrorType(error);
+    showErrorState(error.message, errorType);
   }
+}
+
+// ============================================================================
+// UI State Management (Skeleton & Error)
+// ============================================================================
+
+/**
+ * Show skeleton loading state
+ */
+function showSkeleton() {
+  if (!dataBoxContainer) return;
+  
+  // Header skeleton
+  if (mainDescription) {
+    mainDescription.innerHTML = '<span class="skeleton skeleton-text skeleton-text-header" aria-busy="true" aria-label="로딩 중"></span>';
+  }
+  if (mainTags) {
+    mainTags.setAttribute("aria-busy", "true");
+    mainTags.setAttribute("aria-label", "키워드 로딩 중");
+    mainTags.innerHTML = `
+      <span class="per skeleton skeleton-tag skeleton-tag-per1" aria-hidden="true"></span>
+      <span class="per2 skeleton skeleton-tag skeleton-tag-per2" aria-hidden="true"></span>
+      <span class="per3 skeleton skeleton-tag skeleton-tag-per3" aria-hidden="true"></span>
+      <span class="per4 skeleton skeleton-tag skeleton-tag-per4" aria-hidden="true"></span>
+    `;
+  }
+
+  // Data boxes skeleton
+  // Preserve grid structure but replace content with skeletons
+  const boxes = dataBoxContainer.querySelectorAll('.dataBox, .aiSuggestion');
+  boxes.forEach(box => {
+    const content = box.querySelector('.dataElement, .aiDescribtion');
+    const desc = box.querySelector('.describtion');
+    
+    if (content) {
+      content.innerHTML = '<div class="skeleton skeleton-box skeleton-box-md"></div>';
+    }
+    if (desc) {
+      desc.innerHTML = '<span class="skeleton skeleton-text skeleton-text-desc"></span>';
+    }
+  });
+}
+
+/**
+ * Hide skeleton (restore structure if needed, but renderAnalysisResults overwrites mostly)
+ */
+function hideSkeleton() {
+  // renderAnalysisResults will replace innerHTML, so explicit hiding isn't strictly necessary
+  // but good for cleanup if we added specific classes
+}
+
+/**
+ * Determine error type from error message or error object
+ */
+function getErrorType(error) {
+  const errorMessage = error?.message || String(error || "").toLowerCase();
+  
+  if (errorMessage.includes("network") || errorMessage.includes("fetch") || 
+      errorMessage.includes("failed to fetch") || errorMessage.includes("econnrefused")) {
+    return "network";
+  }
+  if (errorMessage.includes("not found") || errorMessage.includes("404") || 
+      errorMessage.includes("analysis not found")) {
+    return "notfound";
+  }
+  if (errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
+    return "timeout";
+  }
+  if (errorMessage.includes("server") || errorMessage.includes("500") || 
+      errorMessage.includes("503")) {
+    return "server";
+  }
+  return "unknown";
+}
+
+/**
+ * Get user-friendly error message based on error type
+ */
+function getErrorMessage(errorType, originalMessage) {
+  const messages = {
+    network: {
+      title: "네트워크 연결 오류",
+      desc: "인터넷 연결을 확인하고 다시 시도해 주세요.",
+      icon: "network"
+    },
+    notfound: {
+      title: "분석 결과를 찾을 수 없습니다",
+      desc: "요청하신 분석 결과가 존재하지 않거나 삭제되었습니다.",
+      icon: "notfound"
+    },
+    timeout: {
+      title: "요청 시간 초과",
+      desc: "서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.",
+      icon: "timeout"
+    },
+    server: {
+      title: "서버 오류",
+      desc: "일시적인 서버 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+      icon: "server"
+    },
+    unknown: {
+      title: "오류가 발생했습니다",
+      desc: "예기치 않은 문제가 발생했습니다. 다시 시도해 주세요.",
+      icon: "error"
+    }
+  };
+  
+  return messages[errorType] || messages.unknown;
+}
+
+/**
+ * Retry analysis with stored analysis ID
+ */
+async function retryAnalysis() {
+  const analysisId = getUrlParam("id") || localStorage.getItem("lastAnalysisId");
+  
+  if (!analysisId) {
+    toast.error("분석 ID가 없습니다. 업로드 페이지로 이동합니다.");
+    setTimeout(() => navigateToUpload(), 1500);
+    return;
+  }
+  
+  // Show skeleton while retrying
+  showSkeleton();
+  
+  // Hide error state
+  if (dataBoxContainer) {
+    dataBoxContainer.innerHTML = ""; // Clear error state
+  }
+  
+  // Show chat input again
+  const chatInputBox = document.getElementById("chatInputBox");
+  if (chatInputBox) chatInputBox.style.display = "";
+  
+  try {
+    const response = await getAnalysis(analysisId);
+    if (!response.success || !response.analysis) {
+      throw new Error("Analysis not found");
+    }
+
+    currentAnalysis = adaptAnalysisResponse({
+      success: true,
+      analysisId: analysisId,
+      ...response.analysis,
+    });
+
+    chatSessionId = getStoredSessionId(analysisId);
+    hideSkeleton();
+    renderAnalysisResults();
+    toast.success("분석 결과를 다시 불러왔습니다.");
+  } catch (error) {
+    console.error("[Analyze] Retry failed:", error);
+    const errorType = getErrorType(error);
+    showErrorState(error.message, errorType);
+    toast.error("다시 시도 중 오류가 발생했습니다.");
+  }
+}
+
+/**
+ * Show error state with improved UI
+ */
+function showErrorState(message, errorType = null) {
+  // Determine error type if not provided
+  if (!errorType) {
+    errorType = getErrorType(message);
+  }
+  
+  const errorInfo = getErrorMessage(errorType, message);
+  
+  if (mainDescription) mainDescription.textContent = "분석 정보를 불러올 수 없습니다.";
+  if (mainTags) mainTags.innerHTML = "";
+  
+  if (dataBoxContainer) {
+    dataBoxContainer.innerHTML = `
+      <div class="empty-state empty-state-${errorType}" role="alert" aria-live="assertive">
+        <div class="empty-state-icon empty-state-icon-${errorInfo.icon}" aria-hidden="true"></div>
+        <h3 class="empty-state-title">${errorInfo.title}</h3>
+        <p class="empty-state-desc">
+          ${errorInfo.desc}<br>
+          <span class="empty-state-detail">(${message})</span>
+        </p>
+        <button class="btn-retry" onclick="window.dysapp?.retryAnalysis?.()" aria-label="분석 다시 시도">다시 시도</button>
+      </div>
+    `;
+    
+    // Store retry function globally for onclick handler
+    if (!window.dysapp) window.dysapp = {};
+    window.dysapp.retryAnalysis = retryAnalysis;
+  }
+  
+  // Hide chat input on error
+  const chatInputBox = document.getElementById("chatInputBox");
+  if (chatInputBox) chatInputBox.style.display = "none";
+  
+  // Log error for debugging
+  console.error("[Analyze] Error state shown:", {
+    type: errorType,
+    message: message,
+    timestamp: new Date().toISOString()
+  });
 }
 
 // ============================================================================
@@ -160,14 +378,16 @@ function renderKeywords() {
 
   const keywords = currentAnalysis.keywords.slice(0, 4);
 
-  // Clear existing tags and create new ones
-  mainTags.innerHTML = "";
+  // Clear existing tags and create new ones (use DocumentFragment)
+  const fragment = document.createDocumentFragment();
   keywords.forEach((keyword, index) => {
     const span = document.createElement("span");
     span.className = `per${index > 0 ? index + 1 : ""}`;
     span.textContent = keyword;
-    mainTags.appendChild(span);
+    fragment.appendChild(span);
   });
+  mainTags.innerHTML = "";
+  mainTags.appendChild(fragment);
 }
 
 /**
@@ -590,16 +810,21 @@ function renderChatSuggestions() {
     "타이포그래피 계층 구조를 개선하는 방법은?",
   ];
 
-  suggestionBox.innerHTML = suggestions
-    .map(
-      (text) => `
-      <div class="sug_li" role="button" tabindex="0">
-        <img src="./img/s_icon.svg" alt="" class="sug_icon">
-        <p class="sug_li_p">${text}</p>
-      </div>
-    `
-    )
-    .join("");
+  // Use DocumentFragment for better performance
+  const fragment = document.createDocumentFragment();
+  suggestions.forEach(text => {
+    const div = document.createElement("div");
+    div.className = "sug_li";
+    div.setAttribute("role", "button");
+    div.setAttribute("tabindex", "0");
+    div.innerHTML = `
+      <img src="./img/s_icon.svg" alt="" class="sug_icon" aria-hidden="true">
+      <p class="sug_li_p">${text}</p>
+    `;
+    fragment.appendChild(div);
+  });
+  suggestionBox.innerHTML = "";
+  suggestionBox.appendChild(fragment);
 
   // Add click handlers
   suggestionBox.querySelectorAll(".sug_li").forEach((item) => {
@@ -681,6 +906,9 @@ function addChatMessage(role, content) {
 
   const messageDiv = document.createElement("div");
   messageDiv.className = messageClass;
+  messageDiv.setAttribute("role", role === "user" ? "log" : "log");
+  messageDiv.setAttribute("aria-label", role === "user" ? "사용자 메시지" : "AI 응답");
+  
   if (isSameSender) {
     messageDiv.classList.add("same-sender");
   }
@@ -694,8 +922,10 @@ function addChatMessage(role, content) {
   // Add to chat container
   chatContainer.appendChild(messageDiv);
 
-  // Scroll to bottom
-  messageDiv.scrollIntoView({ behavior: "smooth" });
+  // Scroll to bottom (use requestAnimationFrame for better performance)
+  requestAnimationFrame(() => {
+    messageDiv.scrollIntoView({ behavior: "smooth", block: "end" });
+  });
 }
 
 /**
@@ -735,9 +965,12 @@ function addTypingIndicator() {
 
   const indicator = document.createElement("div");
   indicator.className = "bubble_ai typing-indicator";
+  indicator.setAttribute("role", "status");
+  indicator.setAttribute("aria-live", "polite");
+  indicator.setAttribute("aria-label", "AI가 입력 중입니다");
   indicator.innerHTML = `
     <div class="bubbleBox2">
-      <p class="promptB_ai">
+      <p class="promptB_ai" aria-hidden="true">
         <span class="dot"></span>
         <span class="dot"></span>
         <span class="dot"></span>
@@ -746,7 +979,11 @@ function addTypingIndicator() {
   `;
 
   chatContainer.appendChild(indicator);
-  indicator.scrollIntoView({ behavior: "smooth" });
+  
+  // Scroll to bottom (use requestAnimationFrame for better performance)
+  requestAnimationFrame(() => {
+    indicator.scrollIntoView({ behavior: "smooth", block: "end" });
+  });
 
   return indicator;
 }
@@ -948,12 +1185,9 @@ function openDetailModal(category) {
     return;
   }
 
-  const modalBg = document.getElementById("detail_modalBg");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalDescription = document.getElementById("modalDescription");
-  const modalCriteria = document.getElementById("modalCriteria");
-  const modalElements = document.getElementById("modalElements");
-  const modalDetailAnalysis = document.getElementById("modalDetailAnalysis");
+  // Use cached modal elements
+  const modal = getModalElements();
+  const { modalBg, modalTitle, modalDescription, modalCriteria, modalElements, modalDetailAnalysis, modalBox } = modal;
 
   if (!modalBg || !modalTitle || !modalDescription || !modalCriteria || !modalElements || !modalDetailAnalysis) {
     console.warn("[Analyze] Modal elements not found");
@@ -965,11 +1199,17 @@ function openDetailModal(category) {
   modalDescription.textContent = config.description;
   modalCriteria.textContent = config.criteria;
 
-  // Update elements
+  // Update elements (use DocumentFragment for better performance)
   const elements = config.getElements(currentAnalysis);
-  modalElements.innerHTML = elements
-    .map((elem) => `<p class="modal_p2">${elem}</p>`)
-    .join("");
+  const fragment = document.createDocumentFragment();
+  elements.forEach(elem => {
+    const p = document.createElement("p");
+    p.className = "modal_p2";
+    p.textContent = elem;
+    fragment.appendChild(p);
+  });
+  modalElements.innerHTML = "";
+  modalElements.appendChild(fragment);
 
   // Update detail analysis
   modalDetailAnalysis.textContent = config.getDetailAnalysis(currentAnalysis);
@@ -980,13 +1220,20 @@ function openDetailModal(category) {
   document.body.style.overflow = "hidden";
   document.body.style.paddingRight = `${scrollBarWidth}px`;
   document.documentElement.style.paddingRight = `${scrollBarWidth}px`;
+  
+  // Focus management: Focus first focusable element in modal
+  requestAnimationFrame(() => {
+    const firstFocusable = modalBox?.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    firstFocusable?.focus();
+  });
 }
 
 /**
  * Close detail modal
  */
 function closeDetailModal() {
-  const modalBg = document.getElementById("detail_modalBg");
+  const modal = getModalElements();
+  const modalBg = modal.modalBg;
   if (!modalBg) return;
 
   modalBg.style.display = "none";
@@ -996,67 +1243,227 @@ function closeDetailModal() {
 }
 
 // ============================================================================
-// Event Listeners
+// Event Listeners Management
 // ============================================================================
 
+// Track registered listeners to prevent duplicates
+const eventListeners = {
+  chat: new WeakSet(),
+  modal: new WeakSet(),
+  dataBoxes: new WeakSet(),
+  global: new WeakSet(),
+  initialized: false
+};
+
+/**
+ * Setup event listeners with duplicate prevention
+ */
 function setupEventListeners() {
+  // Prevent duplicate initialization
+  if (eventListeners.initialized) {
+    console.warn("[Analyze] Event listeners already initialized, skipping...");
+    return;
+  }
+  
   // Chat send button
-  chatSendBtn?.addEventListener("click", sendChatMessage);
+  if (chatSendBtn && !eventListeners.chat.has(chatSendBtn)) {
+    chatSendBtn.addEventListener("click", sendChatMessage);
+    eventListeners.chat.add(chatSendBtn);
+  }
 
-  // Chat input enter key
-  chatInput?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
+  // Chat input handlers
+  if (chatInput) {
+    // Enter key handler
+    if (!eventListeners.chat.has(chatInput)) {
+      const enterHandler = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendChatMessage();
+        }
+      };
+      chatInput.addEventListener("keydown", enterHandler);
+      eventListeners.chat.add(chatInput);
+      
+      // Store handler for cleanup
+      chatInput._enterHandler = enterHandler;
     }
-  });
 
-  // Chat input auto-grow & button state
-  chatInput?.addEventListener("input", function() {
-    this.style.height = 'auto'; // Reset height
-    const newHeight = Math.min(this.scrollHeight, window.innerHeight * 0.2); 
-    this.style.height = newHeight + 'px';
-    
-    // Toggle button state
-    if (this.value.trim().length > 0) {
-      chatSendBtn?.classList.add("active");
-    } else {
-      chatSendBtn?.classList.remove("active");
-    }
-  });
-
-  // Modal close button
-  const modalCloseBtn = document.getElementById("modalCloseBtn");
-  modalCloseBtn?.addEventListener("click", closeDetailModal);
-
-  // Modal background click
-  const modalBg = document.getElementById("detail_modalBg");
-  modalBg?.addEventListener("click", (e) => {
-    if (e.target === modalBg) {
-      closeDetailModal();
-    }
-  });
-
-  // Data box clicks - open modal with category
-  const dataBoxes = document.querySelectorAll(".dataBox");
-  dataBoxes.forEach((box) => {
-    box.addEventListener("click", () => {
-      const category = box.getAttribute("data-category");
-      if (category) {
-        openDetailModal(category);
+    // Auto-grow & button state handler
+    const inputHandler = function() {
+      this.style.height = 'auto'; // Reset height
+      const newHeight = Math.min(this.scrollHeight, window.innerHeight * 0.2); 
+      this.style.height = newHeight + 'px';
+      
+      // Toggle button state & accessibility
+      const hasContent = this.value.trim().length > 0;
+      if (hasContent) {
+        chatSendBtn?.classList.add("active");
+        chatSendBtn?.removeAttribute("disabled");
+        chatSendBtn?.setAttribute("aria-disabled", "false");
+      } else {
+        chatSendBtn?.classList.remove("active");
+        chatSendBtn?.setAttribute("disabled", "true");
+        chatSendBtn?.setAttribute("aria-disabled", "true");
       }
-    });
-  });
+    };
+    
+    if (!chatInput._inputHandler) {
+      chatInput.addEventListener("input", inputHandler);
+      chatInput._inputHandler = inputHandler;
+    }
+  }
 
-  // ESC key to close modal
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      const modalBg = document.getElementById("detail_modalBg");
-      if (modalBg && modalBg.style.display === "flex") {
+  // Modal handlers (use cached elements)
+  const modal = getModalElements();
+  const modalCloseBtn = modal.modalCloseBtn;
+  if (modalCloseBtn && !eventListeners.modal.has(modalCloseBtn)) {
+    modalCloseBtn.addEventListener("click", closeDetailModal);
+    eventListeners.modal.add(modalCloseBtn);
+  }
+
+  const modalBg = modal.modalBg;
+  if (modalBg && !eventListeners.modal.has(modalBg)) {
+    const modalBgHandler = (e) => {
+      if (e.target === modalBg) {
         closeDetailModal();
       }
+    };
+    modalBg.addEventListener("click", modalBgHandler);
+    eventListeners.modal.add(modalBg);
+    modalBg._clickHandler = modalBgHandler;
+  }
+
+  // Data box clicks - use event delegation for dynamic elements
+  if (dataBoxContainer && !eventListeners.dataBoxes.has(dataBoxContainer)) {
+    const dataBoxHandler = (e) => {
+      const box = e.target.closest(".dataBox");
+      if (box) {
+        const category = box.getAttribute("data-category");
+        if (category) {
+          openDetailModal(category);
+        }
+      }
+    };
+    
+    // Click handler
+    dataBoxContainer.addEventListener("click", dataBoxHandler);
+    
+    // Keyboard handler (Enter/Space)
+    const dataBoxKeyHandler = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const box = e.target.closest(".dataBox");
+        if (box) {
+          const category = box.getAttribute("data-category");
+          if (category) {
+            openDetailModal(category);
+          }
+        }
+      }
+    };
+    dataBoxContainer.addEventListener("keydown", dataBoxKeyHandler);
+    
+    eventListeners.dataBoxes.add(dataBoxContainer);
+    dataBoxContainer._clickHandler = dataBoxHandler;
+    dataBoxContainer._keyHandler = dataBoxKeyHandler;
+  }
+
+  // Global ESC key handler & Focus Trap
+  if (!eventListeners.global.has(document)) {
+    const escHandler = (e) => {
+      if (e.key === "Escape") {
+        const modal = getModalElements();
+        const modalBg = modal.modalBg;
+        if (modalBg && modalBg.style.display === "flex") {
+          closeDetailModal();
+        }
+      }
+    };
+    
+    // Focus trap for modal
+    const focusTrapHandler = (e) => {
+      const modal = getModalElements();
+      const modalBg = modal.modalBg;
+      if (modalBg && modalBg.style.display === "flex") {
+        const modalBox = modal.modalBox;
+        const focusableElements = modalBox?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements?.[0];
+        const lastElement = focusableElements?.[focusableElements.length - 1];
+        
+        if (e.key === "Tab") {
+          if (e.shiftKey && document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement?.focus();
+          } else if (!e.shiftKey && document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
+      }
+    };
+    
+    document.addEventListener("keydown", escHandler);
+    document.addEventListener("keydown", focusTrapHandler);
+    eventListeners.global.add(document);
+    document._escHandler = escHandler;
+    document._focusTrapHandler = focusTrapHandler;
+  }
+  
+  eventListeners.initialized = true;
+  
+  // Development mode: log listener count
+  if (window.dysapp?.debug) {
+    console.log("[Analyze] Event listeners initialized:", {
+      chat: eventListeners.chat.size || "WeakSet",
+      modal: eventListeners.modal.size || "WeakSet",
+      dataBoxes: eventListeners.dataBoxes.size || "WeakSet"
+    });
+  }
+}
+
+/**
+ * Cleanup event listeners (for page navigation or cleanup)
+ */
+function cleanupEventListeners() {
+  // Chat input handlers
+  if (chatInput) {
+    if (chatInput._enterHandler) {
+      chatInput.removeEventListener("keydown", chatInput._enterHandler);
+      delete chatInput._enterHandler;
     }
-  });
+    if (chatInput._inputHandler) {
+      chatInput.removeEventListener("input", chatInput._inputHandler);
+      delete chatInput._inputHandler;
+    }
+  }
+  
+  // Modal handlers
+  const modalBg = document.getElementById("detail_modalBg");
+  if (modalBg && modalBg._clickHandler) {
+    modalBg.removeEventListener("click", modalBg._clickHandler);
+    delete modalBg._clickHandler;
+  }
+  
+  // Data box handlers
+  if (dataBoxContainer && dataBoxContainer._clickHandler) {
+    dataBoxContainer.removeEventListener("click", dataBoxContainer._clickHandler);
+    delete dataBoxContainer._clickHandler;
+  }
+  
+  // Global handlers
+  if (document._escHandler) {
+    document.removeEventListener("keydown", document._escHandler);
+    delete document._escHandler;
+  }
+  if (document._focusTrapHandler) {
+    document.removeEventListener("keydown", document._focusTrapHandler);
+    delete document._focusTrapHandler;
+  }
+  
+  eventListeners.initialized = false;
+  console.log("[Analyze] Event listeners cleaned up");
 }
 
 // ============================================================================
@@ -1099,8 +1506,14 @@ document.head.appendChild(styleSheet);
 function init() {
   console.log("[Analyze] Initializing analyze page...");
   setupEventListeners();
+  
+  // Start with skeleton instead of full screen loader
+  showSkeleton();
   loadAnalysis();
 }
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", cleanupEventListeners);
 
 // Wait for app initialization
 window.addEventListener("dysapp:ready", init);

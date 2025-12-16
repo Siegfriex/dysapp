@@ -19,6 +19,7 @@ export const RATE_LIMITS = {
   CHAT_WITH_MENTOR: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
   SEARCH_SIMILAR: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   SEARCH_TEXT: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
+  CUSTOM_SEARCH: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   SAVE_ITEM: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   GET_ANALYSES: { maxRequests: 60, windowMs: 60 * 1000 }, // 60 requests per minute
   DEFAULT: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute

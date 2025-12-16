@@ -1,84 +1,102 @@
 # 빌드 및 배포 가이드
 
-## 디버깅 및 리팩토링 완료 사항
+## ⚠️ 문제 해결
 
-### 수정된 버그
-1. **rateLimiter 비동기 처리 오류 수정**
-   - `searchText.ts`, `saveItem.ts`에서 `await checkRateLimit()` 사용 → `if (!checkRateLimit())` 수정
-   - `RATE_LIMITS`에 `SEARCH_TEXT`, `SAVE_ITEM` 추가
+### 파일 업로드 문제 해결됨
+- **문제**: 파일을 두 번 선택해야 했음
+- **해결**: 이벤트 중복 방지 및 input value 초기화 타이밍 개선
+- **변경사항**: 
+  - `uploadBox` 클릭 시 `uploadInput` 직접 클릭 방지
+  - 파일 선택 후 100ms 지연 후 value 초기화
+  - 검증 실패 시에도 input 초기화
 
-2. **타입 안정성 개선**
-   - `searchText.ts`에서 중복 인터페이스 정의 제거
-   - 변수명 개선 (`data` → `docData`)
+## 빠른 시작
 
-3. **인덱스 계산 최적화**
-   - `createResultImage()` 함수에서 `searchResults.indexOf()` 제거
-   - 인덱스를 직접 전달하도록 수정
+### 전체 배포 (Functions + Hosting)
+```powershell
+.\build-and-deploy.ps1
+```
 
-### 리팩토링 사항
-- 에러 처리 일관성 개선
-- 코드 가독성 향상
-- 불필요한 코드 제거
+### Functions만 배포
+```powershell
+.\build-and-deploy.ps1 --FunctionsOnly
+```
 
-## 빌드 방법
+### Hosting만 배포
+```powershell
+.\build-and-deploy.ps1 --HostingOnly
+```
+
+## 수동 빌드 및 배포
 
 ### 1. Functions 빌드
-```bash
+```powershell
 cd functions
-npm install  # 의존성이 없다면
+npm install
 npm run build
+cd ..
 ```
 
-빌드 후 `functions/lib/` 폴더에 컴파일된 파일이 생성됩니다.
+### 2. 배포
+```powershell
+# 전체 배포
+firebase deploy
 
-### 2. 빌드 검증
-다음 파일들이 생성되었는지 확인:
-- `functions/lib/search/searchText.js`
-- `functions/lib/search/saveItem.js`
-- `functions/lib/index.js`에 `searchText`, `saveItem` export 확인
-
-## 배포 방법
-
-### Firebase Functions 배포
-```bash
-# 전체 Functions 배포
+# Functions만 배포
 firebase deploy --only functions
 
-# 특정 함수만 배포
-firebase deploy --only functions:searchText
-firebase deploy --only functions:saveItem
+# Hosting만 배포
+firebase deploy --only hosting
 ```
-
-### 배포 전 확인사항
-1. ✅ TypeScript 컴파일 오류 없음
-2. ✅ 모든 새 함수가 `functions/src/index.ts`에 export됨
-3. ✅ 환경 변수 설정 확인 (GEMINI_API_KEY 등)
-4. ✅ Firestore Rules 업데이트 (필요시)
-
-## 배포 후 검증
-
-### 1. Functions 로그 확인
-```bash
-firebase functions:log
-```
-
-### 2. 함수 테스트
-- `searchText`: 텍스트 검색 기능 테스트
-- `saveItem`: 저장 기능 테스트
-
-### 3. 프론트엔드 연동 확인
-- 서칭 페이지에서 텍스트 검색 동작 확인
-- 모달에서 저장/공유/다운로드 버튼 동작 확인
 
 ## 문제 해결
 
-### 빌드 오류 발생 시
-1. `functions/node_modules` 삭제 후 `npm install` 재실행
-2. `functions/lib` 폴더 삭제 후 재빌드
-3. TypeScript 버전 확인: `npm list typescript`
+### 빌드 실패 시
+```powershell
+# 1. Functions 디렉토리 정리
+cd functions
+Remove-Item -Recurse -Force lib -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force node_modules -ErrorAction SilentlyContinue
 
-### 배포 오류 발생 시
-1. Firebase CLI 로그인 확인: `firebase login`
-2. 프로젝트 설정 확인: `firebase use`
-3. Functions 메모리/타임아웃 설정 확인
+# 2. 재설치 및 빌드
+npm install
+npm run build
 
+# 3. 빌드 결과 확인
+Test-Path lib/index.js  # True여야 함
+```
+
+### 배포 실패 시
+```powershell
+# 1. Firebase 로그인 확인
+firebase login
+firebase login:list
+
+# 2. 프로젝트 확인
+firebase use
+firebase projects:list
+
+# 3. Functions 로그 확인
+firebase functions:log
+```
+
+### Firebase CLI 설치
+```powershell
+npm install -g firebase-tools
+firebase login
+```
+
+### 프로젝트 확인
+```powershell
+firebase projects:list
+firebase use <project-id>
+```
+
+### 파일 업로드 문제 해결됨 ✅
+- **문제**: 파일을 두 번 선택해야 했음
+- **원인**: 이벤트 중복 및 value 초기화 타이밍 문제
+- **해결**: 
+  - `uploadBox` 클릭 시 `uploadInput` 직접 클릭 방지
+  - 파일 선택 후 100ms 지연 후 value 초기화
+  - 검증 실패 시에도 input 초기화
+  - 이벤트 버블링 방지

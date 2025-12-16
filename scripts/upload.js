@@ -47,6 +47,10 @@ function handleFileSelect(file) {
   const validation = validateImageFile(file);
   if (!validation.valid) {
     toast.error(validation.error);
+    // Reset input on validation failure
+    if (uploadInput) {
+      uploadInput.value = "";
+    }
     return;
   }
 
@@ -207,16 +211,40 @@ function renderHistoryModal(items) {
 // ============================================================================
 
 function setupEventListeners() {
-  // Upload box click
-  uploadBox?.addEventListener("click", () => {
+  let isProcessingFile = false;
+
+  // Upload box click (but not if clicking directly on input)
+  uploadBox?.addEventListener("click", (e) => {
+    // Don't trigger if clicking directly on the input element or if processing
+    if (e.target === uploadInput || e.target.closest('.upload_input') || isProcessingFile) {
+      return;
+    }
     uploadInput?.click();
+  });
+
+  // Prevent input click from bubbling to uploadBox
+  uploadInput?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Don't open dialog if already processing
+    if (isProcessingFile) {
+      e.preventDefault();
+      return;
+    }
   });
 
   // File input change
   uploadInput?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && !isProcessingFile) {
+      isProcessingFile = true;
       handleFileSelect(file);
+      // Reset input immediately after processing to allow same file selection again
+      // This must be done synchronously, not in setTimeout
+      e.target.value = "";
+      // Reset flag after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        isProcessingFile = false;
+      }, 300);
     }
   });
 
@@ -237,6 +265,10 @@ function setupEventListeners() {
     const file = e.dataTransfer?.files?.[0];
     if (file) {
       handleFileSelect(file);
+      // Reset input to allow same file selection again
+      if (uploadInput) {
+        uploadInput.value = "";
+      }
     }
   });
 

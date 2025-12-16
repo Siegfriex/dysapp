@@ -18,12 +18,12 @@
     <div class="wrap">
         <nav data-include-path="nav.html"></nav>
         <main class="Report_main">
-            <section class="Report" id="analysisReport">
-                <img src="./img/promptarraw.svg" alt="" class="promptArraw">
-                <p class="H1Text" id="mainDescription">분석 결과를 불러오는 중...</p>
-                <span class="main_percent" id="mainTags">
+            <section class="Report" id="analysisReport" role="main" aria-label="디자인 분석 결과">
+                <img src="./img/promptarraw.svg" alt="" class="promptArraw" aria-hidden="true">
+                <h1 class="H1Text" id="mainDescription">분석 결과를 불러오는 중...</h1>
+                <div class="main_percent" id="mainTags" role="list" aria-label="분석 키워드">
                     <!-- Dynamic tags will be inserted here -->
-                </span>
+                </div>
                 
                 <!-- Overall Analysis Section -->
                 <div class="overall-analysis-section" id="overallAnalysisSection" style="display: none;">
@@ -33,51 +33,51 @@
                     </div>
                 </div>
 
-                <div class="dataBox_wrap" id="dataBoxContainer">
-                    <div class="dataBox" data-category="colorPalette">
-                        <p class="H3Text">색상 팔레트</p>
-                        <div class="dataElement" id="colorPaletteContent">
+                <div class="dataBox_wrap" id="dataBoxContainer" role="region" aria-label="분석 데이터">
+                    <div class="dataBox" data-category="colorPalette" role="button" tabindex="0" aria-label="색상 팔레트 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">색상 팔레트</h3>
+                        <div class="dataElement" id="colorPaletteContent" aria-live="polite">
                             <!-- Dynamic color palette -->
                         </div>
                         <p class="describtion" id="colorPaletteDesc"></p>
                     </div>
 
-                    <div class="dataBox" data-category="detectedObjects">
-                        <p class="H3Text">감지된 객체</p>
-                        <div class="dataElement" id="detectedObjectsContent">
+                    <div class="dataBox" data-category="detectedObjects" role="button" tabindex="0" aria-label="감지된 객체 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">감지된 객체</h3>
+                        <div class="dataElement" id="detectedObjectsContent" aria-live="polite">
                             <!-- Dynamic detected objects -->
                         </div>
                         <p class="describtion" id="detectedObjectsDesc"></p>
                     </div>
 
-                    <div class="dataBox" data-category="usageSuggestions">
-                        <p class="H3Text">활용 제안</p>
-                        <ul class="dataElement utilizeBox" id="usageSuggestionsContent">
+                    <div class="dataBox" data-category="usageSuggestions" role="button" tabindex="0" aria-label="활용 제안 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">활용 제안</h3>
+                        <ul class="dataElement utilizeBox" id="usageSuggestionsContent" aria-live="polite">
                             <!-- Dynamic usage suggestions -->
                         </ul>
                         <p class="describtion" id="usageSuggestionsDesc"></p>
                     </div>
 
-                    <div class="dataBox" data-category="layout">
-                        <p class="H3Text">레이아웃</p>
-                        <div class="dataElement layoutBox" id="layoutContent">
+                    <div class="dataBox" data-category="layout" role="button" tabindex="0" aria-label="레이아웃 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">레이아웃</h3>
+                        <div class="dataElement layoutBox" id="layoutContent" aria-live="polite">
                             <!-- Dynamic layout metrics -->
                         </div>
                         <p class="describtion" id="layoutDesc"></p>
                     </div>
 
-                    <div class="dataBox" data-category="typography">
-                        <p class="H3Text">타이포그래피</p>
-                        <div class="dataElement typoData" id="typographyContent">
+                    <div class="dataBox" data-category="typography" role="button" tabindex="0" aria-label="타이포그래피 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">타이포그래피</h3>
+                        <div class="dataElement typoData" id="typographyContent" aria-live="polite">
                             <!-- Dynamic typography data -->
                         </div>
                         <p class="describtion" id="typographyDesc"></p>
                     </div>
 
-                    <div class="dataBox langData" data-category="language">
-                        <p class="H3Text">사용 언어</p>
-                        <p class="H3Text">인식된 텍스트</p>
-                        <div class="dataElement" id="languageContent">
+                    <div class="dataBox langData" data-category="language" role="button" tabindex="0" aria-label="인식된 텍스트 분석 결과, 클릭하여 상세 정보 보기">
+                        <h3 class="H3Text">사용 언어</h3>
+                        <h3 class="H3Text">인식된 텍스트</h3>
+                        <div class="dataElement" id="languageContent" aria-live="polite">
                             <!-- Dynamic language/text data -->
                         </div>
                         <p class="describtion" id="languageDesc"></p>
@@ -90,19 +90,19 @@
                     </div>
                 </div>
             </section>
-            <section class="add_prompt" id="chatSection">
-                <div class="chat-container" id="chatContainer">
+            <section class="add_prompt" id="chatSection" role="region" aria-label="AI 멘토 채팅">
+                <div class="chat-container" id="chatContainer" role="log" aria-live="polite" aria-label="채팅 메시지">
                     <!-- Dynamic chat messages will be inserted here -->
                 </div>
-                <div class="prompt_suggestion_Box" id="suggestionBox">
+                <div class="prompt_suggestion_Box" id="suggestionBox" role="list" aria-label="질문 제안">
                     <!-- Dynamic suggestions will be inserted here -->
                 </div>
             </section>
     </main>
-    <div class="detail_modal_bg" id="detail_modalBg">
+    <div class="detail_modal_bg" id="detail_modalBg" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDescription" tabindex="-1">
         <div class="modal_box" id="modalBox">
-            <button class="modal_closeBtn" id="modalCloseBtn"><img src="./img/close_btn.svg" alt=""></button>
-            <p class="modal_h1" id="modalTitle">색상 팔레트</p>
+            <button class="modal_closeBtn" id="modalCloseBtn" aria-label="모달 닫기"><img src="./img/close_btn.svg" alt="" aria-hidden="true"></button>
+            <h2 class="modal_h1" id="modalTitle">색상 팔레트</h2>
             <p class="modal_p1" id="modalDescription">색상 팔레트의 심미적 조화, 대비(Accessibillity), 및 브랜드 아이덴티티 전달력을 분석합니다.</p>
             <span class="modal_standard">
                 <span class="modal_h2_box">
@@ -129,9 +129,11 @@
             </span>
         </div>
     </div>
-    <div class="analyze_prompt_box" id="chatInputBox">
-        <textarea name="text" class="analyze_prompt" id="chatInput" placeholder="디자인에 대해 질문해보세요..."></textarea>
-        <button type="submit" class="analyze_send_btn" id="chatSendBtn"><img src="./img/send.svg" alt=""></button>
+    <div class="analyze_prompt_box" id="chatInputBox" role="region" aria-label="채팅 입력">
+        <label for="chatInput" class="sr-only">디자인에 대한 질문 입력</label>
+        <textarea name="text" class="analyze_prompt" id="chatInput" placeholder="디자인에 대해 질문해보세요... (Shift+Enter: 줄바꿈, Enter: 전송)" aria-label="디자인에 대한 질문 입력" aria-describedby="chatInputHint"></textarea>
+        <span id="chatInputHint" class="sr-only">Shift와 Enter를 함께 누르면 줄바꿈, Enter만 누르면 전송됩니다.</span>
+        <button type="submit" class="analyze_send_btn" id="chatSendBtn" aria-label="메시지 전송" disabled><img src="./img/send.svg" alt="" aria-hidden="true"></button>
     </div>
     <footer>
 
