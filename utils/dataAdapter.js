@@ -99,6 +99,16 @@ export function adaptAnalysisResponse(apiResponse) {
 
     // Next Actions
     nextActions: apiResponse.nextActions || [],
+
+    // Overall Analysis
+    overallAnalysis: apiResponse.overallAnalysis || "",
+
+    // Strengths & Weaknesses
+    strengths: apiResponse.strengths || [],
+    weaknesses: apiResponse.weaknesses || [],
+
+    // Recognized Text (OCR)
+    recognizedText: apiResponse.ocrText || apiResponse.recognizedText || "",
   };
 }
 
@@ -146,6 +156,11 @@ function adaptLayer1Metrics(metrics) {
     },
 
     diagnosis: metrics.diagnosisSummary || "",
+
+    // Detailed analyses
+    hierarchyAnalysis: metrics.hierarchyAnalysis || "",
+    scanabilityAnalysis: metrics.scanabilityAnalysis || "",
+    goalClarityAnalysis: metrics.goalClarityAnalysis || "",
   };
 }
 
@@ -195,6 +210,12 @@ function adaptLayer2Metrics(metrics) {
       description: "폰트 선택 및 간격",
       status: getMetricStatus(metrics.typographyQuality),
     },
+
+    // Detailed analyses
+    gridAnalysis: metrics.gridAnalysis || "",
+    balanceAnalysis: metrics.balanceAnalysis || "",
+    colorAnalysis: metrics.colorAnalysis || "",
+    typographyAnalysis: metrics.typographyAnalysis || "",
   };
 }
 
@@ -227,6 +248,11 @@ function adaptLayer3Metrics(metrics) {
       title: "감성 톤",
       description: "전체적인 분위기",
     },
+
+    // Detailed analyses
+    trustAnalysis: metrics.trustAnalysis || "",
+    engagementAnalysis: metrics.engagementAnalysis || "",
+    emotionalAnalysis: metrics.emotionalAnalysis || "",
   };
 }
 

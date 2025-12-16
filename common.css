@@ -53,6 +53,32 @@
     --text-semi-small-min: 11px;
     --text-extra-small-min: 10px;
     --text-tiny-min: 10px;
+
+    /* Design Tokens: Shadows & Easings */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(135, 92, 255, 0.1), 0 2px 4px -1px rgba(135, 92, 255, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(135, 92, 255, 0.15), 0 4px 6px -2px rgba(135, 92, 255, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(135, 92, 255, 0.2), 0 10px 10px -5px rgba(135, 92, 255, 0.1);
+    
+    --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 
@@ -64,6 +90,11 @@
 /* Ensure minimum readable font sizes */
 body {
     font-size: max(var(--text-regular), var(--text-regular-min));
+    line-height: 1.6;
+    letter-spacing: -0.02em;
+    word-break: keep-all;
+    color: var(--navy);
+    -webkit-font-smoothing: antialiased;
 }
 
 .wrap {
@@ -409,15 +440,21 @@ main {
     color: var(--background);
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.2s var(--ease-smooth);
     font-size: var(--text-extra-small);
     margin-left: 1vw;
-  }
-  
-  .viewResultBtn:hover {
+}
+
+.viewResultBtn:hover {
     background-color: var(--purpleMain);
     color: var(--background);
-  }
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.viewResultBtn:active {
+    transform: scale(0.95);
+}
   .modal-close-btn img{
     transform: rotate(180deg);
   }
@@ -622,6 +659,99 @@ main {
 
 /* 살려줘............. */
 
+/* Overall Analysis Section */
+.overall-analysis-section {
+    width: 87vw;
+    margin: 2vw auto 1vw auto;
+}
+
+.overall-analysis-box {
+    background: var(--background);
+    border: 0.09vw solid var(--purpleB);
+    border-radius: 2vw;
+    padding: 2vw;
+}
+
+.overall-analysis-title {
+    font-size: var(--text-medium);
+    font-weight: 600;
+    color: var(--purpleMain);
+    margin-bottom: 1vw;
+}
+
+.overall-analysis-text {
+    font-size: var(--text-regular);
+    line-height: 1.6;
+    color: var(--navy);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Strengths & Weaknesses Section */
+.strengths-weaknesses-section {
+    width: 87vw;
+    margin: 1vw auto;
+    display: flex;
+    gap: 1vw;
+    flex-wrap: wrap;
+}
+
+.strengths-box,
+.weaknesses-box {
+    flex: 1;
+    min-width: 26vw;
+    background: var(--background);
+    border: 0.09vw solid var(--purpleB);
+    border-radius: 2vw;
+    padding: 1.5vw;
+}
+
+.strengths-box {
+    border-left: 0.3vw solid #22c55e;
+}
+
+.weaknesses-box {
+    border-left: 0.3vw solid #ef4444;
+}
+
+.sw-title {
+    font-size: var(--text-semi-medium);
+    font-weight: 600;
+    color: var(--purpleMain);
+    margin-bottom: 1vw;
+}
+
+.sw-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sw-list li {
+    font-size: var(--text-small);
+    line-height: 1.6;
+    color: var(--navy);
+    margin-bottom: 0.8vw;
+    padding-left: 1.2vw;
+    position: relative;
+}
+
+.sw-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--purpleMain);
+    font-weight: bold;
+}
+
+.strengths-box .sw-list li::before {
+    color: #22c55e;
+}
+
+.weaknesses-box .sw-list li::before {
+    color: #ef4444;
+}
+
 .dataBox_wrap {
     margin-top: .3vw;
     display: inline-flex;
@@ -762,6 +892,70 @@ main {
     margin: 0 auto;
 }
 
+.metrics-grid {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+/* Accessibility Badges */
+.accessibility-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5vw;
+    margin-bottom: 0.8vw;
+    width: 100%;
+    justify-content: center;
+}
+
+.a11y-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3vw;
+    padding: 0.4vw 0.8vw;
+    border-radius: 0.5vw;
+    font-size: var(--text-tiny);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.a11y-badge:hover {
+    transform: translateY(-0.1vw);
+    box-shadow: 0 0.2vw 0.4vw rgba(0, 0, 0, 0.1);
+}
+
+.a11y-badge-lowContrast {
+    background: #FEE2E2;
+    color: #DC2626;
+    border: 0.1vw solid #FCA5A5;
+}
+
+.a11y-badge-tinyText {
+    background: #FEF3C7;
+    color: #D97706;
+    border: 0.1vw solid #FCD34D;
+}
+
+.a11y-badge-cluttered {
+    background: #E0E7FF;
+    color: #4338CA;
+    border: 0.1vw solid #A5B4FC;
+}
+
+.a11y-icon {
+    font-size: var(--text-small);
+    line-height: 1;
+}
+
+.a11y-label {
+    font-size: var(--text-tiny);
+    line-height: 1.35;
+}
+
 .oneEle {
     display: inline-flex;
     flex-direction: row;
@@ -883,7 +1077,7 @@ main {
 .aiSuggestion {
     width: 82vw;
     /* height: 12vw; */
-    padding: 1vw 2vw 2vw 2vw;
+    padding: 1.5vw 2vw; /* 패딩 조정 */
     margin: .8vw 0 0 .8vw;
     background: #F9FAFC;
     border: .09vw solid var(--purpleB);
@@ -891,7 +1085,7 @@ main {
     display: inline-flex;
     flex-direction: row;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start; /* 상단 정렬로 변경 */
 }
 
 .aiSuggestion .star {
@@ -923,19 +1117,49 @@ main {
     display: flex;
     flex-direction: column;
     gap: 1.5vw;
-    padding: 1vw 0;
+    padding: 1.5vw;
     min-height: 10vw;
-    max-height: 60vh;
+    height: auto; /* 동적 높이 허용 */
+    max-height: 70vh; /* 최대 높이 증가 */
     overflow-y: auto;
     margin-bottom: 1vw;
+    background: var(--purpleG);
+    border-radius: 1.5vw;
+    scroll-behavior: smooth;
+    flex-grow: 1; /* 컨테이너 내에서 확장 가능하도록 설정 */
+}
+
+.chat-container::-webkit-scrollbar {
+    width: 0.4vw;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: var(--purpleB);
+    border-radius: 0.2vw;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: var(--purpleMain);
+}
+
+.bubble_user,
+.bubble_ai {
+    opacity: 0; /* 초기 상태 투명 */
+    animation: fadeInUp 0.5s var(--ease-smooth) forwards;
+    transform-origin: bottom center;
 }
 
 .bubble_ai {
     display: flex;
     align-self: flex-start;
-    margin-left: 2vw;
-    max-width: 70%;
+    margin-left: 0;
+    max-width: 75%;
     margin-right: auto;
+    margin-bottom: 0.5vw;
 }
 
 .bubbleBox2 {
@@ -945,11 +1169,16 @@ main {
     background: var(--background);
     border-radius: 1.5vw;
     position: relative;
-    box-shadow: 0 0.2vw 0.5vw rgba(135, 92, 255, 0.15);
+    box-shadow: var(--shadow-md);
     padding: 1.3vw;
     word-wrap: break-word;
     word-break: break-word;
     overflow-wrap: break-word;
+    transition: box-shadow 0.3s ease;
+}
+
+.bubbleBox2:hover {
+    box-shadow: var(--shadow-lg);
 }
 
 .bubbleBox2::before {
@@ -977,16 +1206,16 @@ main {
 
 
 .prompt_suggestion_Box {
-    display: inline-flex;
-    width: auto;
+    display: flex;
+    width: 100%;
     background-color: var(--purpleG);
     color: var(--purpleC);
     flex-direction: column;
-    padding: 1vw;
+    padding: 1.2vw;
     margin-top: 1vw;
-    min-width: 30vw;
-    /* padding-right: 5vw; */
     border-radius: 1vw;
+    gap: 0.5vw;
+    flex-wrap: wrap;
 }
 
 .sug_icon {
@@ -994,13 +1223,29 @@ main {
 }
 
 .sug_ul {
-    margin: .1vw;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .sug_li {
-    display: inline-flex;
+    display: flex;
+    align-items: center;
     list-style: none;
     font-size: var(--text-tiny);
+    padding: 0.6vw 1vw;
+    margin: 0.3vw 0;
+    background: var(--background);
+    border-radius: 0.8vw;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 0.08vw solid transparent;
+}
+
+.sug_li:hover {
+    background: var(--purpleB);
+    border-color: var(--purpleMain);
+    transform: translateX(0.2vw);
 }
 
 
@@ -1008,9 +1253,10 @@ main {
 .bubble_user {
     display: flex;
     align-self: flex-end;
-    margin-right: 2vw;
+    margin-right: 0;
     margin-left: auto;
-    max-width: 70%;
+    max-width: 75%;
+    margin-bottom: 0.5vw;
 }
 
 .bubbleBox1 {
@@ -1025,7 +1271,7 @@ main {
     word-wrap: break-word;
     word-break: break-word;
     overflow-wrap: break-word;
-    box-shadow: 0 0.2vw 0.5vw rgba(135, 92, 255, 0.2);
+    box-shadow: var(--shadow-md);
 }
 
 .bubbleBox1::before {
@@ -1393,10 +1639,46 @@ main {
     align-items: center;
     justify-content: center; */
     z-index: 5;
+    transition: all 0.3s var(--ease-smooth);
+    opacity: 0.5;
+    transform: scale(0.9);
+    cursor: default;
+    pointer-events: none; /* 비활성 상태 클릭 방지 */
+}
+
+.analyze_send_btn.active {
+    opacity: 1;
+    transform: scale(1);
+    background-color: var(--purpleMain);
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 0 10px rgba(135, 92, 255, 0.4);
+}
+
+.analyze_send_btn.active:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(135, 92, 255, 0.6);
 }
 
 .analyze_send_btn img {
     width: .6vw;
+}
+
+/* Message Grouping */
+.bubble_user.same-sender,
+.bubble_ai.same-sender {
+    margin-top: -0.2vw; /* 간격 좁히기 */
+    animation-name: fadeInUpSmall; /* 애니메이션 거리 단축 */
+}
+
+.bubble_user.same-sender .bubbleBox1::before,
+.bubble_ai.same-sender .bubbleBox2::before {
+    display: none; /* 꼬리 제거 */
+}
+
+@keyframes fadeInUpSmall {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 
@@ -1556,13 +1838,14 @@ main {
 }
 
 .searchImgBox {
-    display: inline-flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13.6vw, 1fr));
+    gap: 1vw;
+    width: 100%;
+    padding: 0;
+    margin: 0;
 }
 
-/* 검색 결과 카드 컨테이너 */
 .searchImgCard {
     position: relative;
     margin: .6vw;
@@ -1570,12 +1853,15 @@ main {
     border-radius: 1vw;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s ease, z-index 0.2s ease;
+    transition: transform 0.3s var(--ease-smooth), box-shadow 0.3s var(--ease-smooth);
+    box-shadow: var(--shadow-sm);
+    background: white;
 }
 
 .searchImgCard:hover {
-    transform: scale(1.04);
+    transform: translateY(-0.3vw) scale(1.02);
     z-index: 10;
+    box-shadow: var(--shadow-lg);
 }
 
 .searchImg {

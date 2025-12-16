@@ -100,6 +100,9 @@ function renderAnalysisResults() {
   // Keywords/tags
   renderKeywords();
 
+  // Overall Analysis
+  renderOverallAnalysis();
+
   // Data boxes
   renderDataBoxes();
 
@@ -168,6 +171,25 @@ function renderKeywords() {
 }
 
 /**
+ * Render overall analysis section
+ */
+function renderOverallAnalysis() {
+  const section = document.getElementById("overallAnalysisSection");
+  const textEl = document.getElementById("overallAnalysisText");
+
+  if (!section || !textEl) return;
+
+  const overallAnalysis = currentAnalysis.overallAnalysis || "";
+  
+  if (overallAnalysis && overallAnalysis.trim()) {
+    textEl.textContent = overallAnalysis;
+    section.style.display = "block";
+  } else {
+    section.style.display = "none";
+  }
+}
+
+/**
  * Render data boxes
  */
 function renderDataBoxes() {
@@ -191,6 +213,9 @@ function renderDataBoxes() {
 
   // Language/text data
   renderLanguageData();
+
+  // Setup modal event listeners after rendering
+  setupModalListeners();
 }
 
 /**
@@ -265,6 +290,32 @@ function renderLayoutMetrics() {
     { label: "균형", value: layer2?.balance?.value || 0 },
   ];
 
+  // Build accessibility badges HTML
+  const accessibility = layer1?.accessibility;
+  const issues = accessibility?.issues || [];
+  let accessibilityBadgesHTML = "";
+  
+  if (issues.length > 0) {
+    accessibilityBadgesHTML = `
+      <div class="accessibility-badges">
+        ${issues.map(issue => {
+          const iconMap = {
+            lowContrast: "!",
+            tinyText: "A",
+            cluttered: "≡",
+          };
+          const icon = iconMap[issue.type] || "!";
+          return `
+            <span class="a11y-badge a11y-badge-${issue.type}" title="${issue.description}">
+              <span class="a11y-icon">${icon}</span>
+              <span class="a11y-label">${issue.label}</span>
+            </span>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   layoutContent.innerHTML = metrics
     .map(
       (metric) => `
@@ -276,19 +327,18 @@ function renderLayoutMetrics() {
     )
     .join("");
 
+  // Accessibility badges can be appended or handled separately if needed
+  // For now, reverting to original structure as requested
+  if (issues.length > 0) {
+    // Optionally add badges after metrics or in description
+    // Keeping it simple as per "revert to original" request
+  }
+
   // Description - 리포트 형태로 개선
   if (layoutDesc) {
     const diagnosis = layer1?.diagnosis || "";
-    const accessibility = layer1?.accessibility;
-    const issues = accessibility?.issues || [];
     
     let descText = diagnosis;
-    
-    // 접근성 이슈가 있으면 추가
-    if (issues.length > 0) {
-      const issueLabels = issues.map(issue => issue.label).join(", ");
-      descText += ` 접근성 이슈: ${issueLabels}.`;
-    }
     
     // 핵심 위험도 표시
     const avgScore = Math.round(
@@ -449,15 +499,39 @@ function renderLanguageData() {
 
   if (!langContent) return;
 
-  // Placeholder for language data
-  langContent.innerHTML = `
-    <span class="lang">분석 중</span>
-    <span class="text">텍스트 인식 결과가 여기에 표시됩니다.</span>
-  `;
-
-  if (langDesc) {
-    langDesc.textContent = "이미지 내 텍스트 정보가 분석됩니다.";
+  const recognizedText = currentAnalysis.recognizedText || "";
+  
+  if (recognizedText) {
+    // Display recognized text
+    const textPreview = recognizedText.length > 50 
+      ? recognizedText.substring(0, 50) + "..." 
+      : recognizedText;
+    
+    langContent.innerHTML = `
+      <span class="lang">한국어</span>
+      <span class="text">${textPreview}</span>
+    `;
+    
+    if (langDesc) {
+      langDesc.textContent = `인식된 텍스트: ${recognizedText.length}자`;
+    }
+  } else {
+    langContent.innerHTML = `
+      <span class="lang">-</span>
+      <span class="text">인식된 텍스트가 없습니다.</span>
+    `;
+    
+    if (langDesc) {
+      langDesc.textContent = "이미지에서 텍스트를 인식하지 못했습니다.";
+    }
   }
+}
+
+/**
+ * Setup modal listeners (called after rendering)
+ */
+function setupModalListeners() {
+  // This is already handled in setupEventListeners, but kept for clarity
 }
 
 /**
@@ -478,44 +552,28 @@ function getUsageSuggestions(format) {
 }
 
 /**
- * Render AI suggestion section (리포트 형태 - 체크리스트)
+ * Render AI suggestion section (Simplified)
  */
 function renderAISuggestion() {
   if (!aiRecommendation) return;
 
   const actions = currentAnalysis.nextActions;
-  const fixScope = currentAnalysis.fixScope;
   
   if (actions && actions.length > 0) {
-    // 리포트 형태의 체크리스트로 렌더링
-    const scopeLabel = fixScope?.label || "";
-    const scopeEmoji = fixScope?.isRebuild ? "🔧" : "✨";
-    
+    // Simple list without titles, numbers, or complex styling
     aiRecommendation.innerHTML = `
-      <div style="margin-bottom: 12px;">
-        <strong style="font-size: 1.1em;">${scopeEmoji} ${scopeLabel} 액션 아이템</strong>
-        <p style="margin: 8px 0; color: #666; font-size: 0.9em;">
-          ${fixScope?.isRebuild 
-            ? "구조적 개선이 우선입니다. 아래 항목을 순서대로 진행하세요." 
-            : "디테일 튜닝을 통해 완성도를 높이세요."}
-        </p>
-      </div>
       <ul style="list-style: none; padding: 0; margin: 0;">
-        ${actions.map((action, i) => `
-          <li style="margin-bottom: 12px; padding: 12px; background: #f8f9fa; border-left: 3px solid ${fixScope?.isRebuild ? '#ef4444' : '#3b82f6'}; border-radius: 4px;">
-            <div style="display: flex; align-items: flex-start;">
-              <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: ${fixScope?.isRebuild ? '#ef4444' : '#3b82f6'}; color: white; border-radius: 50%; font-size: 0.85em; font-weight: bold; margin-right: 12px; flex-shrink: 0;">${i + 1}</span>
-              <div style="flex: 1;">
-                <p style="margin: 0; line-height: 1.6;">${action}</p>
-              </div>
-            </div>
+        ${actions.map((action) => `
+          <li style="margin-bottom: 8px; padding-left: 12px; position: relative;">
+            <span style="position: absolute; left: 0; top: 6px; width: 4px; height: 4px; background: #875CFF; border-radius: 50%;"></span>
+            <p style="margin: 0; line-height: 1.5; color: #555; font-size: 0.95em;">${action}</p>
           </li>
         `).join("")}
       </ul>
     `;
   } else {
     aiRecommendation.innerHTML = `
-      <p style="color: #666;">분석 결과를 바탕으로 AI가 개선 방안을 제안합니다.</p>
+      <p style="color: #666; font-size: 0.9em;">분석 결과를 바탕으로 AI가 개선 방안을 제안합니다.</p>
     `;
   }
 }
@@ -535,23 +593,29 @@ function renderChatSuggestions() {
   suggestionBox.innerHTML = suggestions
     .map(
       (text) => `
-      <ul class="sug_ul">
-        <li class="sug_li">
-          <img src="./img/s_icon.svg" alt="" class="sug_icon">
-          <p class="sug_li_p">${text}</p>
-        </li>
-      </ul>
+      <div class="sug_li" role="button" tabindex="0">
+        <img src="./img/s_icon.svg" alt="" class="sug_icon">
+        <p class="sug_li_p">${text}</p>
+      </div>
     `
     )
     .join("");
 
   // Add click handlers
   suggestionBox.querySelectorAll(".sug_li").forEach((item) => {
-    item.addEventListener("click", () => {
+    const handleClick = () => {
       const text = item.querySelector(".sug_li_p")?.textContent;
       if (text && chatInput) {
         chatInput.value = text;
         chatInput.focus();
+      }
+    };
+    
+    item.addEventListener("click", handleClick);
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClick();
       }
     });
   });
@@ -570,6 +634,8 @@ async function sendChatMessage() {
 
   // Clear input
   chatInput.value = "";
+  chatInput.style.height = 'auto'; // Reset height after send
+  chatSendBtn?.classList.remove("active"); // Deactivate button
 
   // Add user message to chat
   addChatMessage("user", message);
@@ -609,8 +675,16 @@ function addChatMessage(role, content) {
   const bubbleClass = role === "user" ? "bubbleBox1" : "bubbleBox2";
   const textClass = role === "user" ? "promptB_user" : "promptB_ai";
 
+  // Check for same sender grouping
+  const lastMessage = chatContainer.lastElementChild;
+  const isSameSender = lastMessage && lastMessage.classList.contains(messageClass);
+
   const messageDiv = document.createElement("div");
   messageDiv.className = messageClass;
+  if (isSameSender) {
+    messageDiv.classList.add("same-sender");
+  }
+
   messageDiv.innerHTML = `
     <div class="${bubbleClass}">
       <p class="${textClass}">${formatChatContent(content)}</p>
@@ -625,10 +699,29 @@ function addChatMessage(role, content) {
 }
 
 /**
- * Format chat content (convert markdown-like to HTML)
+ * Strip emojis from text
+ */
+function stripEmojis(text) {
+  if (!text) return "";
+  // Remove emoji Unicode ranges
+  return text
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, "") // Emoticons & Symbols
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, "") // Emoticons
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, "") // Transport & Map
+    .replace(/[\u{2600}-\u{26FF}]/gu, "") // Miscellaneous Symbols
+    .replace(/[\u{2700}-\u{27BF}]/gu, "") // Dingbats
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, "") // Variation Selectors
+    .replace(/[\u{200D}]/gu, "") // Zero Width Joiner
+    .replace(/[\u{20E3}]/gu, "") // Combining Enclosing Keycap
+    .trim();
+}
+
+/**
+ * Format chat content (convert markdown-like to HTML and strip emojis)
  */
 function formatChatContent(content) {
-  return content
+  const cleaned = stripEmojis(content);
+  return cleaned
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br/>")
     .replace(/###\s*(.*?)(?:<br\/>|$)/g, "<strong>$1</strong><br/>");
@@ -681,6 +774,228 @@ function getContrastColor(hexColor) {
 }
 
 // ============================================================================
+// Modal Functions
+// ============================================================================
+
+/**
+ * Category to modal data mapping
+ */
+const MODAL_CONFIG = {
+  colorPalette: {
+    title: "색상 팔레트",
+    description: "색상 팔레트의 심미적 조화, 대비(Accessibility), 및 브랜드 아이덴티티 전달력을 분석합니다.",
+    criteria: "색채 이론(Complementary Colors)",
+    getElements: (analysis) => analysis.colors?.slice(0, 4).map(c => c.name || c.hex) || [],
+    getDetailAnalysis: (analysis) => {
+      const colorHarmony = analysis.layer2?.color?.value || 0;
+      const primaryColor = analysis.colors?.[0];
+      if (!primaryColor) return "색상 정보가 없습니다.";
+      
+      if (colorHarmony >= 80) {
+        return `${primaryColor.name}을(를) 주 색상으로 사용한 조화로운 색상 팔레트입니다. 색채 이론에 부합하는 안정적인 구성입니다.`;
+      } else if (colorHarmony >= 60) {
+        return `${primaryColor.name}을(를) 기반으로 한 색상 구성입니다. 색상 간 조화를 약간 개선하면 더 나은 결과를 얻을 수 있습니다.`;
+      } else {
+        return `색상 조합에 개선이 필요합니다. 보색 또는 유사색 원칙을 적용해 보세요.`;
+      }
+    },
+  },
+  detectedObjects: {
+    title: "감지된 객체",
+    description: "이미지에서 식별된 주요 객체 요소들을 기반으로 컨텍스트와 의미를 분석합니다.",
+    criteria: "객체 인식 (Object Detection)",
+    getElements: (analysis) => analysis.keywords?.slice(0, 4) || [],
+    getDetailAnalysis: (analysis) => {
+      const keywords = analysis.keywords?.slice(0, 3) || [];
+      if (keywords.length === 0) return "감지된 객체가 없습니다.";
+      return `주요 키워드: ${keywords.join(", ")}. 이 요소들이 디자인의 핵심 컨텍스트를 형성합니다.`;
+    },
+  },
+  usageSuggestions: {
+    title: "활용 제안",
+    description: "이미지의 분위기, 형태, 구성 요소를 바탕으로 적합한 활용 시나리오를 제안합니다.",
+    criteria: "디자인 형식 분석",
+    getElements: (analysis) => {
+      const format = analysis.format?.value || "Unknown";
+      const suggestions = {
+        UX_UI: ["앱/웹 인터페이스", "대시보드 디자인", "디지털 프로덕트"],
+        Editorial: ["매거진/북 디자인", "브로셔/카탈로그", "보고서 레이아웃"],
+        Poster: ["이벤트/공연 홍보", "광고 캠페인", "전시 포스터"],
+        Thumbnail: ["유튜브 썸네일", "SNS 콘텐츠", "블로그 커버"],
+        Card: ["명함 디자인", "초대장/카드", "패키지 디자인"],
+        BI_CI: ["브랜드 아이덴티티", "로고 디자인", "브랜드 가이드"],
+        Unknown: ["다양한 용도로 활용 가능", "맞춤 디자인", "특수 목적"],
+      };
+      return suggestions[format] || suggestions.Unknown;
+    },
+    getDetailAnalysis: (analysis) => {
+      const formatLabel = analysis.format?.label || "디자인";
+      return `${formatLabel} 형식에 적합한 활용 방안입니다.`;
+    },
+  },
+  layout: {
+    title: "레이아웃",
+    description: "그리드 시스템, 여백(Whitespace), 시각적 균형 및 정보 계층 구조의 효율성을 측정합니다.",
+    criteria: "그리드 시스템 & 정보 계층 (Grid Systems & Information Hierarchy)",
+    getElements: (analysis) => {
+      const layer1 = analysis.layer1;
+      const layer2 = analysis.layer2;
+      if (!layer1 || !layer2) return [];
+      return [
+        `계층성: ${layer1.hierarchy?.value || 0}%`,
+        `스캔성: ${layer1.scanability?.value || 0}%`,
+        `그리드: ${layer2.grid?.value || 0}%`,
+        `균형: ${layer2.balance?.value || 0}%`,
+      ];
+    },
+    getDetailAnalysis: (analysis) => {
+      const layer1 = analysis.layer1;
+      const layer2 = analysis.layer2;
+      if (!layer1 || !layer2) return "레이아웃 정보가 없습니다.";
+      
+      const diagnosis = layer1.diagnosis || "";
+      const accessibility = layer1.accessibility;
+      const issues = accessibility?.issues || [];
+      
+      let detail = diagnosis;
+      
+      if (issues.length > 0) {
+        const issueLabels = issues.map(issue => issue.label).join(", ");
+        detail += ` 접근성 이슈: ${issueLabels}.`;
+      }
+      
+      const avgScore = Math.round(
+        ((layer1.hierarchy?.value || 0) + 
+         (layer1.scanability?.value || 0) + 
+         (layer1.goalClarity?.value || 0)) / 3
+      );
+      
+      if (avgScore < 50) {
+        detail += " [심각] 구조 재설계가 시급합니다.";
+      } else if (avgScore < 60) {
+        detail += " [주의] 구조적 개선이 필요합니다.";
+      }
+      
+      return detail || "레이아웃 분석 결과입니다.";
+    },
+  },
+  typography: {
+    title: "타이포그래피",
+    description: "서체(Font)의 가독성, 크기 대비(Hierarchy), 행간/자간 및 폰트 페어링의 조화를 평가합니다.",
+    criteria: "타이포그래피 원칙 (Typography Principles)",
+    getElements: (analysis) => {
+      const typoQuality = analysis.layer2?.typography?.value || 0;
+      return [`타이포그래피 품질: ${typoQuality}%`];
+    },
+    getDetailAnalysis: (analysis) => {
+      const layer2 = analysis.layer2;
+      if (!layer2) return "타이포그래피 정보가 없습니다.";
+      
+      const typoQuality = layer2.typography?.value || 0;
+      const grid = layer2.grid?.value || 0;
+      const balance = layer2.balance?.value || 0;
+      
+      let detailParts = [];
+      
+      if (typoQuality >= 80) {
+        detailParts.push("타이포그래피: 가독성과 계층 구조가 명확합니다.");
+      } else if (typoQuality >= 60) {
+        detailParts.push("타이포그래피: 행간/자간 조정으로 개선 가능합니다.");
+      } else {
+        detailParts.push("타이포그래피: 폰트 선택과 크기 대비 개선이 필요합니다.");
+      }
+      
+      if (grid < 70) {
+        detailParts.push("그리드 정렬을 개선하면 구조가 더 명확해집니다.");
+      }
+      if (balance < 70) {
+        detailParts.push("시각적 균형을 조정하면 안정감이 향상됩니다.");
+      }
+      
+      return detailParts.join(" ") || "타이포그래피 분석 결과입니다.";
+    },
+  },
+  language: {
+    title: "인식된 텍스트",
+    description: "이미지 안의 실제 텍스트 내용과 의미를 기반으로 깊이 있는 분석을 제공합니다.",
+    criteria: "OCR 텍스트 인식 (OCR Text Recognition)",
+    getElements: (analysis) => {
+      const recognizedText = analysis.recognizedText || "";
+      if (!recognizedText) return ["텍스트 없음"];
+      // Split by lines or sentences, take first few
+      const lines = recognizedText.split(/\n|\./).filter(l => l.trim()).slice(0, 3);
+      return lines.length > 0 ? lines : ["텍스트 인식됨"];
+    },
+    getDetailAnalysis: (analysis) => {
+      const recognizedText = analysis.recognizedText || "";
+      if (!recognizedText) {
+        return "이미지에서 인식된 텍스트가 없습니다.";
+      }
+      return `인식된 텍스트: ${recognizedText.substring(0, 200)}${recognizedText.length > 200 ? "..." : ""}`;
+    },
+  },
+};
+
+/**
+ * Open detail modal with dynamic content
+ */
+function openDetailModal(category) {
+  if (!currentAnalysis) return;
+
+  const config = MODAL_CONFIG[category];
+  if (!config) {
+    console.warn(`[Analyze] Unknown category: ${category}`);
+    return;
+  }
+
+  const modalBg = document.getElementById("detail_modalBg");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalDescription = document.getElementById("modalDescription");
+  const modalCriteria = document.getElementById("modalCriteria");
+  const modalElements = document.getElementById("modalElements");
+  const modalDetailAnalysis = document.getElementById("modalDetailAnalysis");
+
+  if (!modalBg || !modalTitle || !modalDescription || !modalCriteria || !modalElements || !modalDetailAnalysis) {
+    console.warn("[Analyze] Modal elements not found");
+    return;
+  }
+
+  // Update modal content
+  modalTitle.textContent = config.title;
+  modalDescription.textContent = config.description;
+  modalCriteria.textContent = config.criteria;
+
+  // Update elements
+  const elements = config.getElements(currentAnalysis);
+  modalElements.innerHTML = elements
+    .map((elem) => `<p class="modal_p2">${elem}</p>`)
+    .join("");
+
+  // Update detail analysis
+  modalDetailAnalysis.textContent = config.getDetailAnalysis(currentAnalysis);
+
+  // Show modal
+  const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+  modalBg.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  document.body.style.paddingRight = `${scrollBarWidth}px`;
+  document.documentElement.style.paddingRight = `${scrollBarWidth}px`;
+}
+
+/**
+ * Close detail modal
+ */
+function closeDetailModal() {
+  const modalBg = document.getElementById("detail_modalBg");
+  if (!modalBg) return;
+
+  modalBg.style.display = "none";
+  document.body.style.overflow = "";
+  document.body.style.paddingRight = "";
+  document.documentElement.style.paddingRight = "";
+}
+
+// ============================================================================
 // Event Listeners
 // ============================================================================
 
@@ -693,6 +1008,53 @@ function setupEventListeners() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendChatMessage();
+    }
+  });
+
+  // Chat input auto-grow & button state
+  chatInput?.addEventListener("input", function() {
+    this.style.height = 'auto'; // Reset height
+    const newHeight = Math.min(this.scrollHeight, window.innerHeight * 0.2); 
+    this.style.height = newHeight + 'px';
+    
+    // Toggle button state
+    if (this.value.trim().length > 0) {
+      chatSendBtn?.classList.add("active");
+    } else {
+      chatSendBtn?.classList.remove("active");
+    }
+  });
+
+  // Modal close button
+  const modalCloseBtn = document.getElementById("modalCloseBtn");
+  modalCloseBtn?.addEventListener("click", closeDetailModal);
+
+  // Modal background click
+  const modalBg = document.getElementById("detail_modalBg");
+  modalBg?.addEventListener("click", (e) => {
+    if (e.target === modalBg) {
+      closeDetailModal();
+    }
+  });
+
+  // Data box clicks - open modal with category
+  const dataBoxes = document.querySelectorAll(".dataBox");
+  dataBoxes.forEach((box) => {
+    box.addEventListener("click", () => {
+      const category = box.getAttribute("data-category");
+      if (category) {
+        openDetailModal(category);
+      }
+    });
+  });
+
+  // ESC key to close modal
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modalBg = document.getElementById("detail_modalBg");
+      if (modalBg && modalBg.style.display === "flex") {
+        closeDetailModal();
+      }
     }
   });
 }

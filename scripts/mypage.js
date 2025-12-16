@@ -448,6 +448,8 @@ const mypageStyles = `
   min-height: 100vh;
   padding: 2vw 3vw;
   background: #FAFAFF;
+  margin-left: 4vw;
+  box-sizing: border-box;
 }
 
 .mypage-header {
@@ -471,12 +473,14 @@ const mypageStyles = `
 }
 
 .profile-section {
-  padding: 24px;
+  padding: 1.5vw;
   background: white;
-  border-radius: 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(135, 92, 255, 0.08);
+  border-radius: 1vw;
+  margin-bottom: 1.5vw;
+  box-shadow: 0 0.2vw 0.8vw rgba(135, 92, 255, 0.08);
   transition: box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .profile-section:hover {
@@ -577,8 +581,10 @@ const mypageStyles = `
 }
 
 .history-section {
-  padding: 24px;
+  padding: 1.5vw;
   background: transparent;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .section-title {
@@ -591,9 +597,11 @@ const mypageStyles = `
 
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15vw, 1fr));
-  gap: 1.2vw;
+  grid-template-columns: repeat(auto-fill, minmax(18vw, 1fr));
+  gap: 1.5vw;
   margin-bottom: 1.5vw;
+  width: 100%;
+  padding: 0;
 }
 
 .history-card {

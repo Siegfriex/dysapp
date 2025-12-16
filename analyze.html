@@ -24,6 +24,15 @@
                 <span class="main_percent" id="mainTags">
                     <!-- Dynamic tags will be inserted here -->
                 </span>
+                
+                <!-- Overall Analysis Section -->
+                <div class="overall-analysis-section" id="overallAnalysisSection" style="display: none;">
+                    <div class="overall-analysis-box">
+                        <h3 class="overall-analysis-title">종합 분석</h3>
+                        <p class="overall-analysis-text" id="overallAnalysisText"></p>
+                    </div>
+                </div>
+
                 <div class="dataBox_wrap" id="dataBoxContainer">
                     <div class="dataBox" data-category="colorPalette">
                         <p class="H3Text">색상 팔레트</p>
@@ -92,36 +101,31 @@
     </main>
     <div class="detail_modal_bg" id="detail_modalBg">
         <div class="modal_box" id="modalBox">
-            <button class="modal_closeBtn"><img src="./img/close_btn.svg" alt=""></button>
-            <p class="modal_h1">색상 팔레트</p>
-            <p class="modal_p1">색상 팔레트의 심미적 조화, 대비(Accessibillity), 및 브랜드 아이덴티티 전달력을 분석합니다.</p>
+            <button class="modal_closeBtn" id="modalCloseBtn"><img src="./img/close_btn.svg" alt=""></button>
+            <p class="modal_h1" id="modalTitle">색상 팔레트</p>
+            <p class="modal_p1" id="modalDescription">색상 팔레트의 심미적 조화, 대비(Accessibillity), 및 브랜드 아이덴티티 전달력을 분석합니다.</p>
             <span class="modal_standard">
                 <span class="modal_h2_box">
                     <img src="./img/stand_icon.svg" alt="" class="standard_icon">
                     <p class="modal_h2">기준</p>
                 </span>
-                <p class="modal_p2">색채 이론(Complementary Colors)</p>
+                <p class="modal_p2" id="modalCriteria">색채 이론(Complementary Colors)</p>
             </span>
             <span class="modal_element">
                 <span class="modal_h2_box">
                     <img src="./img/ele_icon.svg" alt="" class="element_icon">
                     <p class="modal_h2">주요 요소</p>
                 </span>
-                <span class="modal_p2_box">
-                    <p class="modal_p2">Pink Clocks</p>
-                    <p class="modal_p2">Pink Clocks</p>
-                    <p class="modal_p2">Pink Clocks</p>
-                    <p class="modal_p2">Pink Clocks</p>
+                <span class="modal_p2_box" id="modalElements">
+                    <!-- Dynamic elements will be inserted here -->
                 </span>
-
             </span>
             <span class="modal_detail">
                 <span class="modal_h2_box">
                     <img src="./img/de_icon.svg" alt="" class="detail_icon">
                     <p class="modal_h2">상세 분석</p>
                 </span>
-                <p class="modal_p2">녹색 잔디와 분홍색 시계의 보색 대비가 매우 뚜렷하며 시각적 흥미를 유발합니다. 짙은 검은색 의상과 파란하늘의 조화가 초현실적인 분위기를 효과적으로
-                    전달합니다. </p>
+                <p class="modal_p2" id="modalDetailAnalysis">상세 분석 내용이 여기에 표시됩니다.</p>
             </span>
         </div>
     </div>
@@ -133,81 +137,6 @@
 
     </footer>
     </div>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const modalBg = document.getElementById("detail_modalBg");
-            const modalBox = document.getElementById("modalBox");
-            const dataBoxes = document.querySelectorAll(".dataBox");
-            const closeBtn = document.querySelector(".modal_closeBtn");
-
-            const modalH1 = document.querySelector(".modal_h1");
-            const modalP1 = document.querySelector(".modal_p1");
-            const modalDetailP = document.querySelector(".modal_detail .modal_p2");
-
-            // H1(text) → modal_p1 설명 매핑
-            const p1Mapping = {
-                "색상 팔레트": "색상 팔레트의 심미적 조화, 대비(Accessibillity), 및 브랜드 아이덴티티 전달력을 분석합니다.",
-                "감지된 객체": "이미지에서 식별된 주요 객체 요소들을 기반으로 컨텍스트와 의미를 분석합니다.",
-                "활용 제안": "이미지의 분위기, 형태, 구성 요소를 바탕으로 적합한 활용 시나리오를 제안합니다.",
-                "레이아웃": "그리드 시스템, 여백(Whitespace), 시각적 균형 및 정보 계층 구조의 효율성을 측정합니다.",
-                "타이포그래피": "서체(Font)의 가독성, 크기 대비(Hierarchy), 행간/자간 및 폰트 페어링의 조화를 평가합니다.",
-                "사용 언어": "인식된 언어와 텍스트의 구조적 정보, 메시지 전달력을 분석합니다.",
-                "인식된 텍스트": "이미지 안의 실제 텍스트 내용과 의미를 기반으로 깊이 있는 분석을 제공합니다."
-            };
-
-            // 스크롤바 폭 구하기
-            const getScrollbarWidth = () => {
-                return window.innerWidth - document.documentElement.clientWidth;
-            };
-
-            // 모달 열기
-            const openModal = () => {
-                const scrollBarWidth = getScrollbarWidth();
-                modalBg.style.display = "flex";
-
-                document.body.style.overflow = "hidden";
-                document.body.style.paddingRight = scrollBarWidth + "px";
-                document.documentElement.style.paddingRight = scrollBarWidth + "px";
-            };
-
-            // 모달 닫기
-            const closeModal = () => {
-                modalBg.style.display = "none";
-
-                document.body.style.overflow = "";
-                document.body.style.paddingRight = "";
-                document.documentElement.style.paddingRight = "";
-            };
-
-            // databox 클릭 → 모달 업데이트 + 열기
-            dataBoxes.forEach(box => {
-                box.addEventListener("click", () => {
-                    const h1Text = box.querySelector(".H3Text")?.innerText || "";
-                    const description = box.querySelector(".describtion")?.innerText || "내용 없음";
-
-                    modalH1.innerText = h1Text;
-
-                    // modal_p1 자동 변경
-                    modalP1.innerText = p1Mapping[h1Text] || "";
-
-                    // 상세 분석 업데이트
-                    modalDetailP.innerText = description;
-
-                    openModal();
-                });
-            });
-
-            // 닫기 버튼
-            if (closeBtn) {
-                closeBtn.addEventListener("click", closeModal);
-            }
-
-            // 배경 클릭 시 닫기
-            modalBg.addEventListener("click", (e) => {
-                if (e.target === modalBg) closeModal();
-            });
-        });
-    </script>
 </body>
 
 </html>
