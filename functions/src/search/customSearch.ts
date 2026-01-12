@@ -250,7 +250,7 @@ export const customSearch = functions.https.onCall(
   {
     region: FUNCTIONS_REGION,
     timeoutSeconds: TIMEOUTS.SEARCH_SIMILAR || 60,
-    memory: MEMORY.SEARCH_SIMILAR || "256MiB",
+    memory: MEMORY.CUSTOM_SEARCH || "512MiB",
     secrets: ["GCP_SEARCH_API_KEY", "GCP_SEARCH_ENGINE_ID"],
   },
   customSearchHandler

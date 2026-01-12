@@ -134,6 +134,7 @@ export const MEMORY = {
   ANALYZE_DESIGN: "512MiB",
   CHAT_WITH_MENTOR: "256MiB",
   SEARCH_SIMILAR: "256MiB",
+  CUSTOM_SEARCH: "512MiB",
   DEFAULT: "512MiB",
 } as const;
 
