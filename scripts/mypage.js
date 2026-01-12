@@ -22,6 +22,7 @@ import {
   navigateToAnalysis,
   navigateToUpload,
 } from "./app.js";
+import { onClick, registerCleanup } from "../utils/eventManager.js";
 
 // ============================================================================
 // State
@@ -50,7 +51,23 @@ let currentTab = "all";
 // ============================================================================
 
 /**
- * Load user profile
+ * 사용자 프로필 로드 함수
+ * 
+ * 서버에서 사용자 프로필 정보를 가져와서 화면에 표시합니다.
+ * 프로필 정보에는 이름, 이메일, 구독 정보 등이 포함됩니다.
+ * 
+ * 처리 과정:
+ * 1. getUserProfile API 호출
+ * 2. 응답 데이터를 UI 형식으로 변환 (adaptUserProfile)
+ * 3. 프로필 섹션 렌더링 (renderProfile)
+ * 
+ * @returns {Promise<void>}
+ * 
+ * @throws {Error} API 호출 실패 시 (에러 핸들러가 처리)
+ * 
+ * @example
+ * // 페이지 로드 시 자동 호출
+ * await loadUserProfile();
  */
 async function loadUserProfile() {
   try {
@@ -66,7 +83,27 @@ async function loadUserProfile() {
 }
 
 /**
- * Load analysis history
+ * 분석 히스토리 로드 함수
+ * 
+ * 사용자가 분석한 디자인 목록을 페이지네이션 방식으로 로드합니다.
+ * 
+ * @param {boolean} [append=false] - true면 기존 목록에 추가, false면 새로 로드
+ * 
+ * 처리 과정:
+ * 1. 로딩 상태 표시 (append가 false인 경우만)
+ * 2. getAnalyses API 호출 (페이지네이션 파라미터 포함)
+ * 3. 응답 데이터를 UI 형식으로 변환
+ * 4. Bento Grid 및 갤러리에 렌더링
+ * 5. "더 보기" 버튼 상태 업데이트
+ * 
+ * @returns {Promise<void>}
+ * 
+ * @example
+ * // 첫 페이지 로드
+ * await loadAnalysisHistory(false);
+ * 
+ * // 다음 페이지 추가 로드
+ * await loadAnalysisHistory(true);
  */
 async function loadAnalysisHistory(append = false) {
   try {
@@ -599,13 +636,15 @@ const mypageStyles = `
    ============================================================================ */
 
 .mypage_main {
-  width: calc(100% - 4vw);
+  width: 100%; /* .wrap이 이미 margin-left를 가지고 있으므로 100% 사용 */
   min-height: 100vh;
   padding: 7.84vw 7.84vw 0 7.84vw; /* SVG: y=150.5 -> 150.5/1920 = 7.84vw */
   background: var(--background);
-  margin-left: 4vw;
+  margin-left: 0; /* .wrap의 margin-left 사용 */
   box-sizing: border-box;
   font-family: 'SUITE', 'Rubik', sans-serif;
+  position: relative; /* z-index를 위한 position */
+  z-index: var(--z-content);
 }
 
 /* 헤더 삭제 */
@@ -1514,11 +1553,22 @@ document.head.appendChild(styleSheet);
 function init() {
   console.log("[MyPage] Initializing my page...");
 
-  // Setup gallery tabs
+  // Validate DOM elements
+  if (!profileSection || !bentoGrid || !galleryGrid) {
+    console.error("[MyPage] Required DOM elements not found");
+    return;
+  }
+
+  const mypageUnsubscribeFunctions = [];
+
+  // Setup gallery tabs using eventManager
   galleryTabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      handleTabClick(tab.dataset.tab);
-    });
+    if (tab) {
+      const unsub = onClick(tab, () => {
+        handleTabClick(tab.dataset.tab);
+      });
+      mypageUnsubscribeFunctions.push(unsub);
+    }
   });
 
   // Set active navigation
@@ -1529,7 +1579,16 @@ function init() {
   loadAnalysisHistory();
 
   // Setup load more button
-  loadMoreBtn?.addEventListener("click", loadMore);
+  if (loadMoreBtn) {
+    const unsub = onClick(loadMoreBtn, loadMore);
+    mypageUnsubscribeFunctions.push(unsub);
+  }
+
+  // Register cleanup callback
+  registerCleanup(() => {
+    mypageUnsubscribeFunctions.forEach((unsub) => unsub());
+    mypageUnsubscribeFunctions.length = 0;
+  });
 }
 
 /**

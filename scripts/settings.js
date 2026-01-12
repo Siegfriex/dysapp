@@ -1,3 +1,25 @@
+/**
+ * Settings Page Script (settings.html)
+ * 
+ * =========================================
+ * 목적: 사용자 환경 설정 및 계정 관리 페이지 로직
+ * =========================================
+ * 
+ * 주요 기능:
+ * - 사용자 프로필 정보 표시 및 수정
+ * - 기본 설정 관리 (포맷, 테마, 알림, 언어)
+ * - 계정 설정 (로그아웃 등)
+ * 
+ * 데이터 흐름:
+ * 1. 페이지 로드 시 localStorage에서 설정 로드 (즉시 렌더링)
+ * 2. 백엔드에서 최신 설정 로드 (비동기)
+ * 3. 사용자 설정 변경 시 localStorage 및 백엔드에 저장
+ * 
+ * 관련 파일:
+ * - settings.html: 설정 페이지 HTML 구조
+ * - services/apiService.js: API 호출 함수들
+ */
+
 // ============================================================================
 // Settings Page Logic
 // ============================================================================
@@ -5,12 +27,20 @@
 import { getUserProfile } from '../services/apiService.js';
 import { signOut } from '../services/firebaseService.js';
 
+// ============================================================================
 // State
+// ============================================================================
+
+/**
+ * 사용자 설정 상태 객체
+ * 
+ * 기본값으로 초기화되며, localStorage 및 백엔드에서 로드된 값으로 업데이트됩니다.
+ */
 let userSettings = {
-  defaultFormat: 'all',
-  theme: 'light',
-  notifications: true,
-  language: 'ko'
+  defaultFormat: 'all',      // 기본 디자인 포맷 필터
+  theme: 'light',            // 테마 설정 (light/dark)
+  notifications: true,       // 알림 활성화 여부
+  language: 'ko'            // 언어 설정
 };
 
 // ============================================================================
@@ -31,13 +61,28 @@ async function initializeSettingsPage() {
   try {
     console.log('[Settings] 환경설정 페이지 초기화 시작');
     
-    // Load user settings (don't block rendering if it fails)
-    loadUserSettings().catch(err => {
-      console.warn('[Settings] 설정 로드 실패, 기본값 사용:', err);
-    });
+    // Load from localStorage first (immediate render)
+    const savedSettings = getLocalState('userSettings');
+    if (savedSettings) {
+      try {
+        userSettings = { ...userSettings, ...savedSettings };
+        console.log('[Settings] 로컬스토리지에서 설정 로드:', userSettings);
+      } catch (e) {
+        console.warn('[Settings] 로컬스토리지 파싱 오류:', e);
+      }
+    }
     
-    // Render settings sections immediately
+    // Render settings sections immediately (before network call)
     renderSettings();
+    
+    // Load user settings from backend (non-blocking)
+    try {
+      await loadUserSettings();
+    } catch (err) {
+      console.warn('[Settings] 백엔드 설정 로드 실패, 로컬스토리지 값 사용:', err);
+      // Re-render with backend data if available, otherwise keep localStorage values
+      renderSettings();
+    }
     
     // Setup event listeners after rendering
     setTimeout(() => {
@@ -56,37 +101,62 @@ async function initializeSettingsPage() {
  * Set active navigation state for current page
  */
 function setActiveNavigation() {
-  // Wait for nav.html to be loaded by includHTML.js
-  setTimeout(() => {
-    const navLinks = document.querySelectorAll('.nav_tab a');
-    navLinks.forEach(link => {
-      const href = link.getAttribute('href');
-      if (href && href.includes('settings.html')) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    });
-  }, 200);
+  // Use app.js utility function
+  if (window.setActiveNavigation) {
+    window.setActiveNavigation();
+  } else {
+    // Fallback: wait for nav.html to be loaded by includHTML.js
+    const trySetActive = () => {
+      const navLinks = document.querySelectorAll('.nav_tab a, .nav_ul3 a');
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && (href.includes('settings.html') || href.endsWith('settings.html'))) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    };
+    
+    // Try immediately
+    trySetActive();
+    
+    // Also listen for nav loaded event
+    window.addEventListener('dysapp:navLoaded', trySetActive, { once: true });
+    
+    // Fallback timeout
+    setTimeout(trySetActive, 500);
+  }
 }
 
-// Wait for app initialization
-window.addEventListener('dysapp:ready', init);
+// Wait for app initialization and nav loaded
+function initWhenReady() {
+  if (window.dysapp?.initialized) {
+    init();
+  } else {
+    window.addEventListener('dysapp:ready', init, { once: true });
+  }
+}
 
-// Also try immediate init if already ready
-if (window.dysapp?.initialized) {
-  init();
+// Also listen for nav loaded event
+window.addEventListener('dysapp:navLoaded', () => {
+  setActiveNavigation();
+}, { once: true });
+
+// Initialize
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initWhenReady);
+} else {
+  initWhenReady();
 }
 
 // Fallback: if dysapp:ready never fires, initialize after DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    if (!window.dysapp?.initialized) {
-      console.warn('[Settings] dysapp:ready 이벤트를 기다리지 않고 초기화합니다');
-      init();
-    }
-  }, 500);
-});
+setTimeout(() => {
+  if (!window.dysapp?.initialized) {
+    console.warn('[Settings] dysapp:ready 이벤트를 기다리지 않고 초기화합니다');
+    init();
+  }
+}, 500);
 
 // ============================================================================
 // Load User Settings
@@ -102,10 +172,10 @@ async function loadUserSettings() {
       };
     }
     
-    // Load from localStorage as fallback
-    const savedSettings = localStorage.getItem('userSettings');
+    // Load from localStorage as fallback using stateManager
+    const savedSettings = getLocalState('userSettings');
     if (savedSettings) {
-      userSettings = { ...userSettings, ...JSON.parse(savedSettings) };
+      userSettings = { ...userSettings, ...savedSettings };
     }
   } catch (error) {
     console.error('설정 로드 오류:', error);
@@ -117,17 +187,26 @@ async function loadUserSettings() {
 // ============================================================================
 
 function renderSettings() {
-  const settingsContent = document.querySelector('.settings-content');
+  // Scope selector to main.settings_main to avoid conflicts with nav.html
+  const settingsMain = document.querySelector('main.settings_main');
+  if (!settingsMain) {
+    console.error('[Settings] main.settings_main 요소를 찾을 수 없습니다');
+    setTimeout(() => renderSettings(), 200);
+    return;
+  }
+  
+  const settingsContent = settingsMain.querySelector('.settings-content');
   if (!settingsContent) {
     console.error('[Settings] settings-content 요소를 찾을 수 없습니다. DOM 상태:', {
       body: document.body ? '존재' : '없음',
-      settingsMain: document.querySelector('.settings_main') ? '존재' : '없음',
-      settingsHeader: document.querySelector('.settings-header') ? '존재' : '없음'
+      settingsMain: settingsMain ? '존재' : '없음',
+      settingsHeader: settingsMain.querySelector('.settings-header') ? '존재' : '없음'
     });
     
     // Retry after a short delay
     setTimeout(() => {
-      const retryContent = document.querySelector('.settings-content');
+      const retryMain = document.querySelector('main.settings_main');
+      const retryContent = retryMain?.querySelector('.settings-content');
       if (retryContent) {
         console.log('[Settings] 재시도: 설정 섹션 렌더링');
         renderSettings();
@@ -202,48 +281,68 @@ function renderSettings() {
 // ============================================================================
 
 function setupEventListeners() {
+  // Scope selectors to main.settings_main to avoid conflicts
+  const settingsMain = document.querySelector('main.settings_main');
+  if (!settingsMain) {
+    console.warn('[Settings] main.settings_main을 찾을 수 없어 이벤트 리스너를 설정할 수 없습니다');
+    return;
+  }
+  
+  const settingsUnsubscribeFunctions = [];
+
   // Default format change
-  const defaultFormatSelect = document.getElementById('defaultFormat');
+  const defaultFormatSelect = settingsMain.querySelector('#defaultFormat');
   if (defaultFormatSelect) {
-    defaultFormatSelect.addEventListener('change', (e) => {
+    const unsub = onChange(defaultFormatSelect, (e) => {
       userSettings.defaultFormat = e.target.value;
       saveSettings();
     });
+    settingsUnsubscribeFunctions.push(unsub);
   }
 
   // Theme change
-  const themeSelect = document.getElementById('themeSetting');
+  const themeSelect = settingsMain.querySelector('#themeSetting');
   if (themeSelect) {
-    themeSelect.addEventListener('change', (e) => {
+    const unsub = onChange(themeSelect, (e) => {
       userSettings.theme = e.target.value;
       applyTheme(e.target.value);
       saveSettings();
     });
+    settingsUnsubscribeFunctions.push(unsub);
   }
 
   // Language change
-  const languageSelect = document.getElementById('languageSetting');
+  const languageSelect = settingsMain.querySelector('#languageSetting');
   if (languageSelect) {
-    languageSelect.addEventListener('change', (e) => {
+    const unsub = onChange(languageSelect, (e) => {
       userSettings.language = e.target.value;
       saveSettings();
     });
+    settingsUnsubscribeFunctions.push(unsub);
   }
 
   // Notifications toggle
-  const notificationsToggle = document.getElementById('notificationsSetting');
+  const notificationsToggle = settingsMain.querySelector('#notificationsSetting');
   if (notificationsToggle) {
-    notificationsToggle.addEventListener('change', (e) => {
+    const unsub = onChange(notificationsToggle, (e) => {
       userSettings.notifications = e.target.checked;
       saveSettings();
     });
+    settingsUnsubscribeFunctions.push(unsub);
   }
 
   // Logout
-  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutBtn = settingsMain.querySelector('#logoutBtn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
+    const unsub = onClick(logoutBtn, handleLogout);
+    settingsUnsubscribeFunctions.push(unsub);
   }
+
+  // Register cleanup callback
+  registerCleanup(() => {
+    settingsUnsubscribeFunctions.forEach((unsub) => unsub());
+    settingsUnsubscribeFunctions.length = 0;
+  });
 }
 
 function applyTheme(theme) {
@@ -256,8 +355,8 @@ function applyTheme(theme) {
 
 async function saveSettings() {
   try {
-    // Save to localStorage
-    localStorage.setItem('userSettings', JSON.stringify(userSettings));
+    // Save to localStorage using stateManager
+    setLocalState('userSettings', userSettings);
     
     // TODO: Save to backend via API
     // await apiService.updateUserPreferences(userSettings);
@@ -292,13 +391,15 @@ const settingsStyles = `
    ============================================================================ */
 
 .settings_main {
-  width: calc(100% - 4vw);
+  width: 100%; /* .wrap이 이미 margin-left를 가지고 있으므로 100% 사용 */
   min-height: 100vh;
   padding: 7.84vw 7.84vw 0 7.84vw;
   background: var(--background);
-  margin-left: 4vw;
+  margin-left: 0; /* .wrap의 margin-left 사용 */
   box-sizing: border-box;
   font-family: 'SUITE', 'Rubik', sans-serif;
+  position: relative; /* z-index를 위한 position */
+  z-index: var(--z-content);
 }
 
 .settings-header {

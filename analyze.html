@@ -1,30 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<!-- =========================================
+     페이지: 분석 결과 페이지 (analyze.html)
+     ========================================= 
+     목적: 업로드된 디자인 이미지의 상세 분석 결과를 표시
+     
+     주요 기능:
+     - 디자인 분석 결과 시각화 (색상, 레이아웃, 타이포그래피 등)
+     - AI 멘토 채팅 (분석 결과에 대한 질문 및 답변)
+     - 상세 분석 모달 (각 분석 카테고리별 상세 정보)
+     
+     관련 스크립트:
+     - scripts/app.js: 앱 초기화 및 공통 기능
+     - scripts/analyze.js: 분석 결과 로드 및 렌더링, 채팅 기능
+     
+     데이터 흐름:
+     1. URL 파라미터 또는 localStorage에서 analysisId 가져오기
+     2. getAnalysis API 호출하여 분석 결과 로드
+     3. analyze.js의 renderAnalysisResults()로 결과 렌더링
+     4. 사용자가 채팅 입력 시 chatWithMentor API 호출
+-->
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyze</title>
+    <title>분석 결과 - Dys</title>
+    
+    <!-- 전역 스타일시트 -->
     <link rel="stylesheet" href="./common.css">
+    
+    <!-- 외부 폰트 -->
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    
+    <!-- HTML Include 유틸리티 -->
     <script src="./includHTML.js" defer></script>
+    
+    <!-- 앱 초기화 -->
     <script type="module" src="./scripts/app.js"></script>
+    
+    <!-- 분석 페이지 로직: 결과 로드 및 채팅 처리 -->
     <script type="module" src="./scripts/analyze.js"></script>
 </head>
 
 <body>
     <div class="wrap">
+        <!-- 네비게이션 바: nav.html이 자동 삽입됨 -->
         <nav data-include-path="nav.html"></nav>
+        
+        <!-- 메인 콘텐츠 영역 -->
         <main class="Report_main">
+            
+            <!-- =========================================
+                 분석 결과 섹션
+                 ========================================= 
+                 분석된 디자인의 종합 정보를 표시하는 영역
+                 analyze.js의 renderAnalysisResults() 함수가 동적으로 내용 생성
+            -->
             <section class="Report" id="analysisReport" role="main" aria-label="디자인 분석 결과">
+                
+                <!-- 메인 제목: 분석된 디자인의 포맷 및 점수 표시 -->
                 <h1 class="H1Text" id="mainDescription">분석 결과를 불러오는 중...</h1>
+                
+                <!-- 분석 키워드 태그: 감지된 키워드들이 태그 형태로 표시됨 -->
                 <div class="main_percent" id="mainTags" role="list" aria-label="분석 키워드">
-                    <!-- Dynamic tags will be inserted here -->
+                    <!-- 동적으로 키워드 태그가 삽입됩니다 -->
                 </div>
                 
-                <!-- Overall Analysis Section -->
+                <!-- =========================================
+                     종합 분석 섹션
+                     ========================================= 
+                     전체적인 디자인 분석 요약을 텍스트로 표시
+                     초기 상태: display:none (데이터 로드 후 표시)
+                -->
                 <div class="overall-analysis-section" id="overallAnalysisSection" style="display: none;">
                     <div class="overall-analysis-box">
                         <h3 class="overall-analysis-title">종합 분석</h3>
@@ -32,6 +82,12 @@
                     </div>
                 </div>
 
+                <!-- =========================================
+                     분석 데이터 박스 컨테이너
+                     ========================================= 
+                     각 분석 카테고리별 상세 정보를 카드 형태로 표시
+                     클릭 시 상세 분석 모달이 열림
+                -->
                 <div class="dataBox_wrap" id="dataBoxContainer" role="region" aria-label="분석 데이터">
                     <div class="dataBox" data-category="colorPalette" role="button" tabindex="0" aria-label="색상 팔레트 분석 결과, 클릭하여 상세 정보 보기">
                         <h3 class="H3Text">색상 팔레트</h3>

@@ -4,6 +4,8 @@
  */
 
 import { initializeFirebase, ensureAuth, onAuthChange } from "../services/firebaseService.js";
+import { setToast as setErrorHandlerToast } from "../services/errorHandler.js";
+import { setLocalState, getLocalState } from "../utils/stateManager.js";
 
 // ============================================================================
 // Global App State
@@ -20,7 +22,31 @@ window.dysapp = {
 // ============================================================================
 
 /**
- * Initialize the application
+ * 앱 초기화 함수
+ * 
+ * 애플리케이션의 전역 상태를 초기화하고 Firebase 인증을 설정합니다.
+ * 모든 페이지에서 공통으로 사용되는 초기화 로직을 담당합니다.
+ * 
+ * 처리 과정:
+ * 1. 중복 초기화 방지 체크
+ * 2. Firebase 서비스 초기화
+ * 3. 인증 상태 변경 리스너 등록
+ * 4. 사용자 인증 확인 (익명 인증 자동 시도)
+ * 5. 에러 핸들러에 Toast 함수 연결
+ * 6. 앱 준비 완료 이벤트 발생
+ * 7. 활성 네비게이션 설정
+ * 
+ * @returns {Promise<void>}
+ * 
+ * @throws {Error} Firebase 초기화 실패 시
+ * @throws {Error} 인증 실패 시 (사용자 친화적 메시지 표시)
+ * 
+ * @example
+ * // HTML 파일에서 호출
+ * <script type="module">
+ *   import { initApp } from './scripts/app.js';
+ *   initApp();
+ * </script>
  */
 export async function initApp() {
   if (window.dysapp.initialized) {
@@ -64,6 +90,11 @@ export async function initApp() {
 
   // Dispatch ready event
   window.dispatchEvent(new CustomEvent("dysapp:ready"));
+  
+  // Set active navigation after a short delay to ensure nav is loaded
+  setTimeout(() => {
+    setActiveNavigation();
+  }, 300);
 }
 
 // ============================================================================
@@ -71,7 +102,19 @@ export async function initApp() {
 // ============================================================================
 
 /**
- * Show loading overlay
+ * 로딩 오버레이 표시 함수
+ * 
+ * 사용자에게 작업이 진행 중임을 알리는 로딩 오버레이를 표시합니다.
+ * 페이지 전체를 덮는 오버레이로, 사용자가 다른 작업을 수행하지 못하도록 합니다.
+ * 
+ * @param {string} [message="처리 중..."] - 로딩 메시지 텍스트
+ * 
+ * @example
+ * // 분석 시작 시
+ * showLoading("디자인 분석 중...");
+ * 
+ * // API 호출 시
+ * showLoading("데이터 불러오는 중...");
  */
 export function showLoading(message = "처리 중...") {
   window.dysapp.loading = true;
@@ -95,7 +138,18 @@ export function showLoading(message = "처리 중...") {
 }
 
 /**
- * Hide loading overlay
+ * 로딩 오버레이 숨김 함수
+ * 
+ * 표시된 로딩 오버레이를 제거합니다.
+ * 작업이 완료되면 반드시 호출해야 합니다.
+ * 
+ * @example
+ * try {
+ *   showLoading("처리 중...");
+ *   await someAsyncOperation();
+ * } finally {
+ *   hideLoading();
+ * }
  */
 export function hideLoading() {
   window.dysapp.loading = false;
@@ -110,7 +164,24 @@ export function hideLoading() {
 // ============================================================================
 
 /**
- * Show toast notification
+ * Toast 알림 표시 함수
+ * 
+ * 사용자에게 일시적인 알림 메시지를 표시합니다.
+ * 성공, 에러, 경고, 정보 등 다양한 타입의 메시지를 표시할 수 있습니다.
+ * 
+ * @param {string} message - 표시할 메시지 텍스트
+ * @param {string} [type="info"] - Toast 타입 ("success", "error", "warning", "info")
+ * @param {number} [duration=3000] - 표시 시간 (밀리초)
+ * 
+ * @example
+ * // 성공 메시지
+ * toast.success("분석이 완료되었습니다!");
+ * 
+ * // 에러 메시지
+ * toast.error("오류가 발생했습니다.");
+ * 
+ * // 경고 메시지
+ * toast.warning("파일 크기를 확인해주세요.");
  */
 export function showToast(message, type = "info", duration = 3000) {
   // Create toast container if not exists
@@ -152,6 +223,9 @@ export const toast = {
   info: (msg, duration) => showToast(msg, "info", duration),
 };
 
+// Set toast for error handler
+setErrorHandlerToast(toast);
+
 // ============================================================================
 // Navigation Helpers
 // ============================================================================
@@ -160,7 +234,7 @@ export const toast = {
  * Navigate to analysis page with ID
  */
 export function navigateToAnalysis(analysisId) {
-  localStorage.setItem("lastAnalysisId", analysisId);
+  setLocalState("lastAnalysisId", analysisId);
   window.location.href = `analyze.html?id=${analysisId}`;
 }
 
@@ -184,6 +258,46 @@ export function navigateToUpload() {
 export function getUrlParam(name) {
   const params = new URLSearchParams(window.location.search);
   return params.get(name);
+}
+
+/**
+ * Set active navigation state for current page
+ * Should be called after nav.html is loaded
+ */
+export function setActiveNavigation() {
+  const currentPath = window.location.pathname;
+  const currentPage = currentPath.split('/').pop() || 'index.html';
+  
+  // Find all nav links
+  const navLinks = document.querySelectorAll('.nav_tab a, .nav_ul3 a');
+  
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href) {
+      const linkPage = href.split('/').pop();
+      // Remove active class from all links
+      link.classList.remove('active');
+      // Add active class if current page matches
+      if (linkPage === currentPage || 
+          (currentPage === '' && linkPage === 'index.html') ||
+          (currentPage === 'index.html' && linkPage === 'index.html')) {
+        link.classList.add('active');
+      }
+    }
+  });
+  
+  // Also handle nav_ul3 buttons/links
+  const navButtons = document.querySelectorAll('.nav_ul3 .nav-link');
+  navButtons.forEach(btn => {
+    const href = btn.getAttribute('href');
+    if (href) {
+      const btnPage = href.split('/').pop();
+      btn.classList.remove('active');
+      if (btnPage === currentPage) {
+        btn.classList.add('active');
+      }
+    }
+  });
 }
 
 // ============================================================================
@@ -317,3 +431,8 @@ if (document.readyState === "loading") {
 } else {
   initApp();
 }
+
+// Listen for nav loaded event to set active navigation
+window.addEventListener("dysapp:navLoaded", () => {
+  setActiveNavigation();
+});

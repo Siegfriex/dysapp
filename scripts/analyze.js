@@ -16,6 +16,8 @@ import {
   getUrlParam,
   navigateToUpload,
 } from "./app.js";
+import { getLocalState } from "../utils/stateManager.js";
+import { setHTML, escapeHTML, sanitizeHTML } from "../utils/domHelper.js";
 
 // ============================================================================
 // State
@@ -65,8 +67,8 @@ function getModalElements() {
  * Load analysis data and render
  */
 async function loadAnalysis() {
-  // Get analysis ID from URL or localStorage
-  const analysisId = getUrlParam("id") || localStorage.getItem("lastAnalysisId");
+  // Get analysis ID from URL or localStorage using stateManager
+  const analysisId = getUrlParam("id") || getLocalState("lastAnalysisId");
 
   if (!analysisId) {
     toast.error("분석 ID가 없습니다");
@@ -107,7 +109,26 @@ async function loadAnalysis() {
 // ============================================================================
 
 /**
- * Show skeleton loading state
+ * 스켈레톤 로딩 상태 표시 함수
+ * 
+ * 분석 결과를 로드하는 동안 스켈레톤 UI를 표시합니다.
+ * 실제 콘텐츠가 로드되기 전까지 사용자에게 로딩 상태를 시각적으로 보여줍니다.
+ * 
+ * 스켈레톤이 표시되는 영역:
+ * - 메인 제목 (mainDescription)
+ * - 키워드 태그 (mainTags)
+ * - 분석 데이터 박스들 (dataBoxContainer 내부)
+ * 
+ * 접근성:
+ * - aria-busy 속성으로 스크린 리더에 로딩 상태 알림
+ * - aria-label로 로딩 중인 콘텐츠 설명
+ * 
+ * @example
+ * // 분석 결과 로드 시작 시
+ * showSkeleton();
+ * const result = await getAnalysis(analysisId);
+ * hideSkeleton();
+ * renderAnalysisResults(result);
  */
 function showSkeleton() {
   if (!dataBoxContainer) return;
@@ -152,7 +173,30 @@ function hideSkeleton() {
 }
 
 /**
- * Determine error type from error message or error object
+ * 에러 타입 판별 함수
+ * 
+ * 에러 객체나 메시지를 분석하여 에러 타입을 판별합니다.
+ * 판별된 타입에 따라 적절한 에러 메시지와 UI를 표시할 수 있습니다.
+ * 
+ * 판별 가능한 에러 타입:
+ * - "network": 네트워크 연결 오류
+ * - "notfound": 리소스를 찾을 수 없음 (404)
+ * - "timeout": 요청 시간 초과
+ * - "server": 서버 오류 (500, 503)
+ * - "unknown": 알 수 없는 오류
+ * 
+ * @param {Error|string} error - 에러 객체 또는 에러 메시지 문자열
+ * 
+ * @returns {string} 에러 타입 문자열
+ * 
+ * @example
+ * try {
+ *   await someOperation();
+ * } catch (error) {
+ *   const errorType = getErrorType(error);
+ *   const errorMessage = getErrorMessage(errorType, error.message);
+ *   showErrorState(errorMessage.title, errorType);
+ * }
  */
 function getErrorType(error) {
   const errorMessage = error?.message || String(error || "").toLowerCase();
@@ -214,7 +258,7 @@ function getErrorMessage(errorType, originalMessage) {
  * Retry analysis with stored analysis ID
  */
 async function retryAnalysis() {
-  const analysisId = getUrlParam("id") || localStorage.getItem("lastAnalysisId");
+  const analysisId = getUrlParam("id") || getLocalState("lastAnalysisId");
   
   if (!analysisId) {
     toast.error("분석 ID가 없습니다. 업로드 페이지로 이동합니다.");
@@ -972,11 +1016,14 @@ function addChatMessage(role, content) {
     messageDiv.classList.add("same-sender");
   }
 
-  messageDiv.innerHTML = `
+  // Use setHTML with sanitization for user input
+  const formattedContent = formatChatContent(content);
+  const messageHtml = `
     <div class="${bubbleClass}">
-      <p class="${textClass}">${formatChatContent(content)}</p>
+      <p class="${textClass}">${formattedContent}</p>
     </div>
   `;
+  setHTML(messageDiv, messageHtml, { sanitize: true });
 
   // Add to chat container
   chatContainer.appendChild(messageDiv);

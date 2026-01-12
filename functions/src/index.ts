@@ -34,6 +34,7 @@ export { searchSimilar } from "./search/searchSimilar";
 export { searchText } from "./search/searchText";
 export { saveItem } from "./search/saveItem";
 export { customSearch } from "./search/customSearch";
+export { getBookmarks, deleteBookmark } from "./search/bookmarks";
 
 // User/Profile Functions
 export {

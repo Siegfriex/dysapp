@@ -1,100 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<!-- =========================================
+     컴포넌트: 네비게이션 사이드바 (nav.html)
+     ========================================= 
+     목적: 모든 페이지에서 공통으로 사용되는 사이드바 네비게이션
+     
+     사용 방법:
+     - 다른 HTML 파일에서 <nav data-include-path="nav.html"></nav>로 포함
+     - includHTML.js가 자동으로 이 파일의 내용을 삽입
+     
+     구조:
+     1. 로고 영역: 메인 페이지로 이동
+     2. 메인 네비게이션: 주요 페이지 링크
+     3. 하단 네비게이션: 구독 및 설정 링크
+     
+     스타일:
+     - common.css의 .sidebar, .nav_ul 클래스 사용
+     - 인라인 스타일로 아이콘 크기 조정 (vw 단위 사용)
+-->
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>네비게이션</title>
     <link rel="stylesheet" href="./common.css">
     <style>
+        /* 리셋 스타일: 기본 마진/패딩 제거 */
         * {
             margin: 0;
             padding: 0;
         }   
-        </style>
+    </style>
 </head>
 <body>
     <div class="layout">
-        <nav class="sidebar">
+        <!-- 사이드바 네비게이션 컨테이너 -->
+        <nav class="sidebar" role="navigation" aria-label="메인 네비게이션">
+            
+            <!-- =========================================
+                 로고 영역
+                 ========================================= 
+                 기능: 클릭 시 메인 페이지(index.html)로 이동
+            -->
             <ul class="nav_ul logo_ul">
                 <li>
-                    <a href="./index.html">
-                        <img src="./img/logo.svg" alt="" style="width: 1.9vw;">
+                    <a href="./index.html" aria-label="홈으로 이동">
+                        <img src="./img/logo.svg" alt="Dys 로고" style="width: 1.9vw;">
                     </a>
                 </li>
             </ul>
 
+            <!-- =========================================
+                 메인 네비게이션 탭
+                 ========================================= 
+                 주요 페이지로 이동하는 네비게이션 링크들
+            -->
             <ul class="nav_ul nav_tab">
-                <li><a href="./index.html"><img src="./img/uploadTab.svg" style="width: 1.2vw;"></a></li>
-                <li><a href="./searchTab.html"><img src="./img/searchTab.svg" style="width: 1.4vw;"></a></li>
-                <li><a href="./mypage.html"><img src="./img/mypage.svg" style="width: 1.3vw;"></a></li>
-                <li><a href=""><img src="./img/alertTab.svg" style="width: 1.3vw;"></a></li>
+                <!-- 업로드 페이지: 이미지 업로드 및 분석 시작 -->
+                <li>
+                    <a href="./index.html" aria-label="업로드 페이지">
+                        <img src="./img/uploadTab.svg" style="width: 1.2vw;" alt="업로드">
+                    </a>
+                </li>
+                
+                <!-- 검색 페이지: 이미지 및 텍스트 검색 -->
+                <li>
+                    <a href="./searchTab.html" aria-label="검색 페이지">
+                        <img src="./img/searchTab.svg" style="width: 1.4vw;" alt="검색">
+                    </a>
+                </li>
+                
+                <!-- 마이페이지: 사용자 프로필 및 분석 히스토리 -->
+                <li>
+                    <a href="./mypage.html" aria-label="마이페이지">
+                        <img src="./img/mypage.svg" style="width: 1.3vw;" alt="마이페이지">
+                    </a>
+                </li>
+                
+                <!-- 알림 탭: 현재 미구현 (빈 링크) -->
+                <li>
+                    <a href="" aria-label="알림 (준비 중)">
+                        <img src="./img/alertTab.svg" style="width: 1.3vw;" alt="알림">
+                    </a>
+                </li>
             </ul>
 
+            <!-- =========================================
+                 하단 네비게이션 (구독 및 설정)
+                 ========================================= 
+                 부가 기능 페이지로 이동하는 링크들
+            -->
             <div class="nav_ul nav_tab nav_ul3">
-                <button id="subscribeBtn" onclick="location.href='./subscribe.html'">
-                        <img src="./img/suscribeTab.svg" style="width: 0.8vw;">
-                </button>
-                <button id="settingsBtn" onclick="location.href='./settings.html'">
-                    <img src="./img/setting.svg" style="width: 1.3vw;">
-                </button>
+                <!-- 구독 페이지: 구독 플랜 선택 및 결제 -->
+                <a href="./subscribe.html" class="nav-link" aria-label="구독 페이지">
+                    <img src="./img/suscribeTab.svg" style="width: 0.8vw;" alt="구독">
+                </a>
+                
+                <!-- 설정 페이지: 사용자 환경 설정 -->
+                <a href="./settings.html" class="nav-link" aria-label="설정 페이지">
+                    <img src="./img/setting.svg" style="width: 1.3vw;" alt="설정">
+                </a>
             </div>
         </nav>
-        
-        <div class="mypage-btn">
-            <a href="./mypage.html">
-                <img class="mypageIcon" src="./img/mypage.svg" alt="">
-            </a>
-        </div>
-        
-        <div id="settingsBox" class="settings-box">
-            <div class="settings-header">
-                <h3>설정</h3>
-            </div>
-            <div class="settings-content">
-                <div class="setting-group">
-                    <label>기본 분석 포맷</label>
-                    <select id="defaultFormat">
-                        <option value="all">모든 포맷</option>
-                        <option value="UX_UI">UX/UI</option>
-                        <option value="Editorial">Editorial</option>
-                        <option value="Poster">Poster</option>
-                    </select>
-                </div>
-                <div class="setting-group">
-                    <label>테마 설정</label>
-                    <select id="themeSetting">
-                        <option value="light">라이트 모드</option>
-                        <option value="dark">다크 모드</option>
-                    </select>
-                </div>
-                <ul class="settings-menu">
-                    <li><a href="./mypage.html">프로필 관리</a></li>
-                    <li><a href="#" id="logoutBtn">로그아웃</a></li>
-                </ul>
-            </div>
-        </div>
     </div>
-    <script defer>
-        const settingsBtn = document.getElementById("settingsBtn");
-    const settingsBox = document.getElementById("settingsBox");
-    
-    settingsBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // 클릭이 window로 전파되는 거 막기
-        settingsBox.style.display =
-            settingsBox.style.display === "block" ? "none" : "block";
-    });
-    
-    settingsBox.addEventListener("click", (e) => {
-        e.stopPropagation(); // 내부 클릭 시 닫히지 않도록
-    });
-    
-    window.addEventListener("click", () => {
-        settingsBox.style.display = "none";
-    });
-
-    
-    </script>
 </body>
 
 </html>

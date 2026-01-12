@@ -1,11 +1,47 @@
+/**
+ * Subscribe Page Script (subscribe.html)
+ * 
+ * =========================================
+ * 목적: 구독 플랜 선택 및 결제 처리 페이지 로직
+ * =========================================
+ * 
+ * 주요 기능:
+ * - 구독 플랜 표시 (무료, 프로, 엔터프라이즈)
+ * - 월간/연간 결제 주기 전환
+ * - 플랜별 기능 비교
+ * - 결제 처리 (향후 구현)
+ * 
+ * 데이터 구조:
+ * - plansData: 플랜 정보를 월간/연간별로 저장
+ * - 각 플랜은 id, name, price, features 등을 포함
+ * 
+ * 관련 파일:
+ * - subscribe.html: 구독 페이지 HTML 구조
+ * - services/apiService.js: 사용자 프로필 API 호출
+ */
+
 // ============================================================================
 // Subscribe Page Logic
 // ============================================================================
 
 import { getUserProfile } from '../services/apiService.js';
+import { onClick, registerCleanup } from '../utils/eventManager.js';
+import { setHTML, escapeHTML } from '../utils/domHelper.js';
 
+// ============================================================================
 // State
-let currentPeriod = 'monthly'; // 'monthly' or 'yearly'
+// ============================================================================
+
+/**
+ * 현재 선택된 결제 주기
+ * @type {'monthly'|'yearly'}
+ */
+let currentPeriod = 'monthly';
+
+/**
+ * 현재 표시 중인 구독 플랜 목록
+ * @type {Array<Object>}
+ */
 let subscriptionPlans = [];
 
 // Subscription Plans Data
@@ -151,21 +187,26 @@ function renderPlans() {
 
   const plans = plansData[currentPeriod];
   
-  plansGrid.innerHTML = plans.map(plan => createPlanCard(plan)).join('');
+  // Use setHTML with sanitization for safety
+  const plansHtml = plans.map(plan => createPlanCard(plan)).join('');
+  setHTML(plansGrid, plansHtml, { sanitize: true });
   
-  // Add click handlers
+  // Add click handlers using eventManager
   plans.forEach((plan, index) => {
     const card = plansGrid.children[index];
     if (card) {
       const subscribeBtn = card.querySelector('.plan-subscribe-btn');
       if (subscribeBtn) {
-        subscribeBtn.addEventListener('click', () => handleSubscribe(plan));
+        const unsub = onClick(subscribeBtn, () => handleSubscribe(plan));
+        subscribeUnsubscribeFunctions.push(unsub);
       }
     }
   });
 }
 
 function createPlanCard(plan) {
+  // Escape user input to prevent XSS
+  const planName = escapeHTML(plan.name);
   const priceFormatted = plan.price === 0 ? '무료' : `${plan.price.toLocaleString()}원`;
   const originalPriceHtml = plan.originalPrice 
     ? `<span class="plan-original-price">${plan.originalPrice.toLocaleString()}원</span>`
@@ -177,24 +218,29 @@ function createPlanCard(plan) {
     ? '<span class="plan-popular-badge">인기</span>'
     : '';
   
+  // Features are from static data, but escape for safety
+  const featuresHtml = plan.features.map(feature => 
+    `<li class="plan-feature">${escapeHTML(feature)}</li>`
+  ).join('');
+  
   return `
-    <div class="plan-card ${plan.popular ? 'plan-card-popular' : ''}" data-plan-id="${plan.id}">
+    <div class="plan-card ${plan.popular ? 'plan-card-popular' : ''}" data-plan-id="${escapeHTML(plan.id)}">
       ${popularBadge}
       <div class="plan-header">
-        <h3 class="plan-name">${plan.name}</h3>
+        <h3 class="plan-name">${planName}</h3>
         <div class="plan-price-container">
           ${originalPriceHtml}
           <div class="plan-price">
             <span class="plan-price-amount">${priceFormatted}</span>
-            <span class="plan-price-period">/${plan.period}</span>
+            <span class="plan-price-period">/${escapeHTML(plan.period)}</span>
           </div>
           ${discountBadge}
         </div>
       </div>
       <ul class="plan-features">
-        ${plan.features.map(feature => `<li class="plan-feature">${feature}</li>`).join('')}
+        ${featuresHtml}
       </ul>
-      <button class="plan-subscribe-btn ${plan.price === 0 ? 'plan-subscribe-btn-free' : ''}" data-plan-id="${plan.id}">
+      <button class="plan-subscribe-btn ${plan.price === 0 ? 'plan-subscribe-btn-free' : ''}" data-plan-id="${escapeHTML(plan.id)}">
         ${plan.price === 0 ? '현재 플랜' : '구독하기'}
       </button>
     </div>
@@ -205,14 +251,23 @@ function createPlanCard(plan) {
 // Event Handlers
 // ============================================================================
 
+const subscribeUnsubscribeFunctions = [];
+
 function setupEventListeners() {
   // Billing period toggle
   const toggleButtons = document.querySelectorAll('.toggle-btn');
   toggleButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
+    const unsub = onClick(btn, () => {
       const period = btn.dataset.period;
       switchPeriod(period);
     });
+    subscribeUnsubscribeFunctions.push(unsub);
+  });
+
+  // Register cleanup callback
+  registerCleanup(() => {
+    subscribeUnsubscribeFunctions.forEach((unsub) => unsub());
+    subscribeUnsubscribeFunctions.length = 0;
   });
 }
 
@@ -263,13 +318,15 @@ const subscribeStyles = `
    ============================================================================ */
 
 .subscribe_main {
-  width: calc(100% - 4vw);
+  width: 100%; /* .wrap이 이미 margin-left를 가지고 있으므로 100% 사용 */
   min-height: 100vh;
   padding: 7.84vw 7.84vw 0 7.84vw;
   background: var(--background);
-  margin-left: 4vw;
+  margin-left: 0; /* .wrap의 margin-left 사용 */
   box-sizing: border-box;
   font-family: 'SUITE', 'Rubik', sans-serif;
+  position: relative; /* z-index를 위한 position */
+  z-index: var(--z-content);
 }
 
 .subscribe-header {

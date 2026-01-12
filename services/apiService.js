@@ -5,6 +5,8 @@
  */
 
 import { callFunction, ensureAuth } from "./firebaseService.js";
+import { handleApiError, withErrorHandling, parseError as parseErrorFromHandler } from "./errorHandler.js";
+import { setLocalState, getLocalState, removeLocalState, clearState } from "../utils/stateManager.js";
 
 // ============================================================================
 // Constants
@@ -17,6 +19,8 @@ const FUNCTION_NAMES = {
   SEARCH_TEXT: "searchText",
   CUSTOM_SEARCH: "customSearch",
   SAVE_ITEM: "saveItem",
+  GET_BOOKMARKS: "getBookmarks",
+  DELETE_BOOKMARK: "deleteBookmark",
   GET_ANALYSES: "getAnalyses",
   GET_ANALYSIS: "getAnalysis",
   GET_USER_PROFILE: "getUserProfile",
@@ -39,33 +43,35 @@ const FUNCTION_NAMES = {
  * @returns {Promise<Object>} Analysis result
  */
 export async function analyzeDesign({ imageData, mimeType, fileName, userPrompt }) {
-  try {
-    await ensureAuth();
-  } catch (error) {
-    // 인증 실패 시 더 명확한 에러 메시지
-    if (error.message?.includes("익명 인증이 활성화되지 않았습니다")) {
-      throw new Error("Firebase 설정 오류: 관리자에게 문의하세요");
+  return withErrorHandling(async () => {
+    try {
+      await ensureAuth();
+    } catch (error) {
+      // 인증 실패 시 더 명확한 에러 메시지
+      if (error.message?.includes("익명 인증이 활성화되지 않았습니다")) {
+        throw new Error("Firebase 설정 오류: 관리자에게 문의하세요");
+      }
+      throw new Error("인증에 실패했습니다. 페이지를 새로고침해주세요");
     }
-    throw new Error("인증에 실패했습니다. 페이지를 새로고침해주세요");
-  }
 
-  if (!imageData || !mimeType || !fileName) {
-    throw new Error("Missing required fields: imageData, mimeType, fileName");
-  }
+    if (!imageData || !mimeType || !fileName) {
+      throw new Error("Missing required fields: imageData, mimeType, fileName");
+    }
 
-  const result = await callFunction(FUNCTION_NAMES.ANALYZE_DESIGN, {
-    imageData,
-    mimeType,
-    fileName,
-    userPrompt,
-  });
+    const result = await callFunction(FUNCTION_NAMES.ANALYZE_DESIGN, {
+      imageData,
+      mimeType,
+      fileName,
+      userPrompt,
+    });
 
-  // Store analysisId in localStorage for navigation
-  if (result.success && result.analysisId) {
-    localStorage.setItem("lastAnalysisId", result.analysisId);
-  }
+    // Store analysisId in localStorage for navigation
+    if (result.success && result.analysisId) {
+      setLocalState("lastAnalysisId", result.analysisId);
+    }
 
-  return result;
+    return result;
+  }, { showToast: true });
 }
 
 /**
@@ -74,13 +80,15 @@ export async function analyzeDesign({ imageData, mimeType, fileName, userPrompt 
  * @returns {Promise<Object>} Analysis document
  */
 export async function getAnalysis(analysisId) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  if (!analysisId) {
-    throw new Error("Missing analysisId");
-  }
+    if (!analysisId) {
+      throw new Error("Missing analysisId");
+    }
 
-  return callFunction(FUNCTION_NAMES.GET_ANALYSIS, { analysisId });
+    return callFunction(FUNCTION_NAMES.GET_ANALYSIS, { analysisId });
+  }, { showToast: true });
 }
 
 /**
@@ -93,14 +101,16 @@ export async function getAnalysis(analysisId) {
  * @returns {Promise<Object>} List of analyses
  */
 export async function getAnalyses(params = {}) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  return callFunction(FUNCTION_NAMES.GET_ANALYSES, {
+    return callFunction(FUNCTION_NAMES.GET_ANALYSES, {
     limit: params.limit || 20,
     offset: params.offset || 0,
     filterFormat: params.filterFormat,
     filterFixScope: params.filterFixScope,
   });
+  }, { showToast: true });
 }
 
 /**
@@ -109,13 +119,15 @@ export async function getAnalyses(params = {}) {
  * @returns {Promise<Object>}
  */
 export async function deleteAnalysis(analysisId) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  if (!analysisId) {
-    throw new Error("Missing analysisId");
-  }
+    if (!analysisId) {
+      throw new Error("Missing analysisId");
+    }
 
-  return callFunction(FUNCTION_NAMES.DELETE_ANALYSIS, { analysisId });
+    return callFunction(FUNCTION_NAMES.DELETE_ANALYSIS, { analysisId });
+  }, { showToast: true });
 }
 
 // ============================================================================
@@ -131,25 +143,27 @@ export async function deleteAnalysis(analysisId) {
  * @returns {Promise<Object>} Chat response
  */
 export async function chatWithMentor({ analysisId, message, sessionId }) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  if (!analysisId || !message) {
-    throw new Error("Missing required fields: analysisId, message");
-  }
+    if (!analysisId || !message) {
+      throw new Error("Missing required fields: analysisId, message");
+    }
 
-  const result = await callFunction(FUNCTION_NAMES.CHAT_WITH_MENTOR, {
-    analysisId,
-    message,
-    sessionId,
-  });
+    const result = await callFunction(FUNCTION_NAMES.CHAT_WITH_MENTOR, {
+      analysisId,
+      message,
+      sessionId,
+    });
 
   // Store sessionId for continuing conversation
   if (result.success && result.sessionId) {
     const sessionKey = `chatSession_${analysisId}`;
-    localStorage.setItem(sessionKey, result.sessionId);
+    setLocalState(sessionKey, result.sessionId);
   }
 
-  return result;
+    return result;
+  }, { showToast: true });
 }
 
 /**
@@ -159,7 +173,7 @@ export async function chatWithMentor({ analysisId, message, sessionId }) {
  */
 export function getStoredSessionId(analysisId) {
   const sessionKey = `chatSession_${analysisId}`;
-  return localStorage.getItem(sessionKey);
+  return getLocalState(sessionKey);
 }
 
 // ============================================================================
@@ -177,21 +191,23 @@ export function getStoredSessionId(analysisId) {
  * @returns {Promise<Object>} Search results
  */
 export async function searchSimilar(params) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  const { analysisId } = params;
+    const { analysisId } = params;
 
-  if (!analysisId) {
-    throw new Error("Missing analysisId");
-  }
+    if (!analysisId) {
+      throw new Error("Missing analysisId");
+    }
 
-  return callFunction(FUNCTION_NAMES.SEARCH_SIMILAR, {
-    analysisId,
-    limit: params.limit || 10,
-    filterFormat: params.filterFormat,
-    filterFixScope: params.filterFixScope,
-    minScore: params.minScore,
-  });
+    return callFunction(FUNCTION_NAMES.SEARCH_SIMILAR, {
+      analysisId,
+      limit: params.limit || 10,
+      filterFormat: params.filterFormat,
+      filterFixScope: params.filterFixScope,
+      minScore: params.minScore,
+    });
+  }, { showToast: true });
 }
 
 /**
@@ -205,21 +221,23 @@ export async function searchSimilar(params) {
  * @returns {Promise<Object>} Search results
  */
 export async function searchText(params) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  const { query } = params;
+    const { query } = params;
 
-  if (!query || query.trim().length < 2) {
-    throw new Error("Query must be at least 2 characters");
-  }
+    if (!query || query.trim().length < 2) {
+      throw new Error("Query must be at least 2 characters");
+    }
 
-  return callFunction(FUNCTION_NAMES.SEARCH_TEXT, {
-    query: query.trim(),
-    limit: params.limit || 20,
-    filterFormat: params.filterFormat,
-    filterFixScope: params.filterFixScope,
-    minScore: params.minScore,
-  });
+    return callFunction(FUNCTION_NAMES.SEARCH_TEXT, {
+      query: query.trim(),
+      limit: params.limit || 20,
+      filterFormat: params.filterFormat,
+      filterFixScope: params.filterFixScope,
+      minScore: params.minScore,
+    });
+  }, { showToast: true });
 }
 
 /**
@@ -231,19 +249,21 @@ export async function searchText(params) {
  * @returns {Promise<Object>} Search results
  */
 export async function customSearch(params) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  const { query } = params;
+    const { query } = params;
 
-  if (!query || query.trim().length < 2) {
-    throw new Error("Query must be at least 2 characters");
-  }
+    if (!query || query.trim().length < 2) {
+      throw new Error("Query must be at least 2 characters");
+    }
 
-  return callFunction(FUNCTION_NAMES.CUSTOM_SEARCH, {
-    query: query.trim(),
-    start: params.start || 1,
-    num: params.num || 10,
-  });
+    return callFunction(FUNCTION_NAMES.CUSTOM_SEARCH, {
+      query: query.trim(),
+      start: params.start || 1,
+      num: params.num || 10,
+    });
+  }, { showToast: true });
 }
 
 /**
@@ -253,15 +273,55 @@ export async function customSearch(params) {
  * @returns {Promise<Object>} Save result
  */
 export async function saveItem(params) {
-  await ensureAuth();
+  return withErrorHandling(async () => {
+    await ensureAuth();
 
-  const { analysisId } = params;
+    const { analysisId } = params;
 
-  if (!analysisId) {
-    throw new Error("Missing analysisId");
-  }
+    if (!analysisId) {
+      throw new Error("Missing analysisId");
+    }
 
-  return callFunction(FUNCTION_NAMES.SAVE_ITEM, { analysisId });
+    return callFunction(FUNCTION_NAMES.SAVE_ITEM, { analysisId });
+  }, { showToast: true });
+}
+
+/**
+ * Get user's bookmarks
+ * @param {Object} [params]
+ * @param {number} [params.limit=20] - Number of bookmarks to fetch
+ * @param {string} [params.startAfter] - Bookmark ID for pagination
+ * @returns {Promise<Object>} Bookmarks list with analysis metadata
+ */
+export async function getBookmarks(params = {}) {
+  return withErrorHandling(async () => {
+    await ensureAuth();
+
+    return callFunction(FUNCTION_NAMES.GET_BOOKMARKS, {
+      limit: params.limit || 20,
+      startAfter: params.startAfter,
+    });
+  }, { showToast: true });
+}
+
+/**
+ * Delete a bookmark
+ * @param {Object} params
+ * @param {string} params.bookmarkId - Bookmark ID to delete
+ * @returns {Promise<Object>} Delete result
+ */
+export async function deleteBookmark(params) {
+  return withErrorHandling(async () => {
+    await ensureAuth();
+
+    const { bookmarkId } = params;
+
+    if (!bookmarkId) {
+      throw new Error("Missing bookmarkId");
+    }
+
+    return callFunction(FUNCTION_NAMES.DELETE_BOOKMARK, { bookmarkId });
+  }, { showToast: true });
 }
 
 // ============================================================================
@@ -273,8 +333,10 @@ export async function saveItem(params) {
  * @returns {Promise<Object>} User profile
  */
 export async function getUserProfile() {
-  await ensureAuth();
-  return callFunction(FUNCTION_NAMES.GET_USER_PROFILE, {});
+  return withErrorHandling(async () => {
+    await ensureAuth();
+    return callFunction(FUNCTION_NAMES.GET_USER_PROFILE, {});
+  }, { showToast: true });
 }
 
 /**
@@ -285,8 +347,10 @@ export async function getUserProfile() {
  * @returns {Promise<Object>}
  */
 export async function updateUserProfile(params) {
-  await ensureAuth();
-  return callFunction(FUNCTION_NAMES.UPDATE_USER_PROFILE, params);
+  return withErrorHandling(async () => {
+    await ensureAuth();
+    return callFunction(FUNCTION_NAMES.UPDATE_USER_PROFILE, params);
+  }, { showToast: true });
 }
 
 // ============================================================================
@@ -298,7 +362,9 @@ export async function updateUserProfile(params) {
  * @returns {Promise<Object>}
  */
 export async function healthCheck() {
-  return callFunction(FUNCTION_NAMES.HEALTH_CHECK, {});
+  return withErrorHandling(async () => {
+    return callFunction(FUNCTION_NAMES.HEALTH_CHECK, {});
+  }, { showToast: false, silent: true });
 }
 
 // ============================================================================
@@ -367,33 +433,14 @@ export function validateImageFile(file) {
 // ============================================================================
 
 /**
- * Parse Firebase function error
+ * Parse Firebase function error (deprecated - use errorHandler.parseError instead)
+ * @deprecated Use errorHandler.parseError for consistent error handling
  * @param {Error} error
  * @returns {{code: string, message: string}}
  */
 export function parseError(error) {
-  if (error.code) {
-    // Firebase error
-    const codeMap = {
-      "functions/unauthenticated": "Please sign in to continue",
-      "functions/invalid-argument": "Invalid input provided",
-      "functions/not-found": "Resource not found",
-      "functions/permission-denied": "You don't have permission",
-      "functions/resource-exhausted": "Too many requests. Please try again later",
-      "functions/internal": "Server error. Please try again",
-      "functions/failed-precondition": "Operation cannot be performed",
-    };
-
-    return {
-      code: error.code,
-      message: codeMap[error.code] || error.message,
-    };
-  }
-
-  return {
-    code: "unknown",
-    message: error.message || "An unexpected error occurred",
-  };
+  // Re-export from errorHandler for backward compatibility
+  return parseErrorFromHandler(error);
 }
 
 // ============================================================================
@@ -405,16 +452,14 @@ export function parseError(error) {
  * @returns {string|null}
  */
 export function getLastAnalysisId() {
-  return localStorage.getItem("lastAnalysisId");
+  return getLocalState("lastAnalysisId");
 }
 
 /**
  * Clear analysis data from localStorage
  */
 export function clearAnalysisData() {
-  localStorage.removeItem("lastAnalysisId");
+  removeLocalState("lastAnalysisId");
   // Clear all chat sessions
-  Object.keys(localStorage)
-    .filter((key) => key.startsWith("chatSession_"))
-    .forEach((key) => localStorage.removeItem(key));
+  clearState({ prefix: "chatSession_", storage: "localStorage" });
 }

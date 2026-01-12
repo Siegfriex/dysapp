@@ -8,6 +8,8 @@ import {
   searchText,
   customSearch,
   saveItem,
+  getBookmarks,
+  deleteBookmark,
   analyzeDesign,
   getAnalysis,
   readFileAsBase64,
@@ -21,6 +23,9 @@ import {
   toast,
   navigateToAnalysis,
 } from "./app.js";
+import { setSessionState, getSessionState, removeSessionState } from "../utils/stateManager.js";
+import { onClick, onChange, onKeyDown, addEventListener, registerCleanup } from "../utils/eventManager.js";
+import { debounce, throttle } from "../utils/performance.js";
 
 // ============================================================================
 // State
@@ -28,11 +33,13 @@ import {
 
 let searchResults = [];
 let customSearchResults = [];
+let bookmarkResults = [];
 let currentFilters = {
   format: null,
   fixScope: null,
   minScore: null,
 };
+let currentCategory = "my-style"; // Track current category tab
 
 // Custom Search state
 let currentSearchQuery = null;
@@ -64,8 +71,31 @@ document.body.appendChild(uploadInput);
 // ============================================================================
 
 /**
- * Generate search query from analysis data
- * Priority: ragSearchQueries > detectedKeywords > formatPrediction
+ * 분석 데이터에서 검색 쿼리 생성 함수
+ * 
+ * 분석 결과 데이터를 기반으로 검색에 사용할 쿼리 문자열을 생성합니다.
+ * 우선순위에 따라 가장 적합한 검색어를 선택합니다.
+ * 
+ * 우선순위:
+ * 1. ragSearchQueries: AI가 생성한 검색 쿼리 (최우선)
+ * 2. detectedKeywords: 감지된 키워드 배열
+ * 3. formatPrediction: 디자인 포맷 예측값
+ * 
+ * @param {Object} analysis - 분석 결과 데이터 객체
+ * @param {string[]} [analysis.ragSearchQueries] - AI 생성 검색 쿼리 배열
+ * @param {string[]} [analysis.detectedKeywords] - 감지된 키워드 배열
+ * @param {string} [analysis.formatPrediction] - 디자인 포맷 예측값
+ * 
+ * @returns {string|null} 검색 쿼리 문자열 또는 null
+ * 
+ * @example
+ * const analysis = {
+ *   ragSearchQueries: ["모던한 포스터 디자인"],
+ *   detectedKeywords: ["타이포그래피", "미니멀"],
+ *   formatPrediction: "Poster"
+ * };
+ * const query = generateSearchQuery(analysis);
+ * // 반환: "모던한 포스터 디자인"
  */
 function generateSearchQuery(analysis) {
   if (!analysis) return null;
@@ -114,7 +144,33 @@ async function getLastAnalysisData() {
 // ============================================================================
 
 /**
- * Search by image upload
+ * 이미지 업로드 기반 검색 함수
+ * 
+ * 사용자가 업로드한 이미지를 분석한 후, 분석 결과를 기반으로 유사한 디자인을 검색합니다.
+ * 
+ * 처리 과정:
+ * 1. 파일 유효성 검사
+ * 2. 파일을 base64로 변환
+ * 3. 이미지 분석 API 호출
+ * 4. 분석 결과를 기반으로 유사 디자인 검색
+ * 5. 검색 결과 렌더링
+ * 
+ * @param {File} file - 검색에 사용할 이미지 파일 객체
+ * 
+ * @returns {Promise<void>}
+ * 
+ * @throws {Error} 파일 유효성 검사 실패 시
+ * @throws {Error} 분석 API 호출 실패 시
+ * @throws {Error} 검색 API 호출 실패 시
+ * 
+ * @example
+ * // 파일 입력 이벤트에서 호출
+ * uploadInput.addEventListener('change', async (e) => {
+ *   const file = e.target.files[0];
+ *   if (file) {
+ *     await searchByImage(file);
+ *   }
+ * });
  */
 async function searchByImage(file) {
   // Validate file
@@ -268,7 +324,8 @@ async function performCustomSearch(query, start = 1) {
 /**
  * Load more search results (infinite scroll)
  */
-async function loadMoreSearchResults() {
+// Throttle loadMore to prevent rapid calls
+const throttledLoadMore = throttle(async () => {
   if (isLoadingMore || !hasMoreResults || !currentSearchQuery) {
     return;
   }
@@ -277,6 +334,10 @@ async function loadMoreSearchResults() {
   currentSearchStart += 10;
   
   await performCustomSearch(currentSearchQuery, currentSearchStart);
+}, 1000); // Throttle to max once per second
+
+async function loadMoreSearchResults() {
+  await throttledLoadMore();
 }
 
 /**
@@ -464,16 +525,25 @@ function createCustomSearchImage(result, index) {
 /**
  * Render search results grid (for Firestore results)
  */
-function renderSearchResults() {
+function renderSearchResults(results = null) {
   if (!resultsGrid) {
     console.warn("[Search] Results grid not found");
     return;
   }
 
+  // If we're on the my-reference tab, render bookmarks instead
+  if (currentCategory === "my-reference") {
+    renderBookmarks(bookmarkResults);
+    return;
+  }
+
+  // Use provided results or default to searchResults
+  const resultsToRender = results !== null ? results : searchResults;
+
   // Keep the page-dim element
   const pageDim = resultsGrid.querySelector(".page-dim");
 
-  if (searchResults.length === 0) {
+  if (resultsToRender.length === 0) {
     resultsGrid.innerHTML = `
       <div class="no-results">
         <p>검색 결과가 없습니다</p>
@@ -485,7 +555,7 @@ function renderSearchResults() {
   }
 
   // Clear existing images but keep structure
-  resultsGrid.innerHTML = searchResults
+  resultsGrid.innerHTML = resultsToRender
     .map((result, index) => createResultImage(result, index))
     .join("");
 
@@ -556,8 +626,8 @@ function truncateFileName(name, maxLength = 20) {
  * Open filter page/modal
  */
 function openFilterPage() {
-  // Store current search state
-  sessionStorage.setItem("searchFilters", JSON.stringify(currentFilters));
+  // Store current search state using stateManager
+  setSessionState("searchFilters", currentFilters);
   window.location.href = "filter.html";
 }
 
@@ -565,11 +635,11 @@ function openFilterPage() {
  * Apply filters from filter page
  */
 function applyFiltersFromStorage() {
-  const storedFilters = sessionStorage.getItem("appliedFilters");
+  const storedFilters = getSessionState("appliedFilters");
   if (storedFilters) {
     try {
-      const filters = JSON.parse(storedFilters);
-      sessionStorage.removeItem("appliedFilters");
+      const filters = storedFilters;
+      removeSessionState("appliedFilters");
 
       // Convert filter format to match currentFilters structure
       // Note: currentFilters uses format/fixScope/minScore, but filter page uses colors/keywords
@@ -634,7 +704,9 @@ function setupCategoryTabs() {
 
       // Update filter based on tab position
       const category = categories[index] || "all";
-      handleCategoryChange(category);
+      handleCategoryChange(category).catch(err => {
+        console.error("[Search] Category change error:", err);
+      });
     });
   });
 }
@@ -642,23 +714,178 @@ function setupCategoryTabs() {
 /**
  * Handle category tab change
  */
-function handleCategoryChange(category) {
+async function handleCategoryChange(category) {
+  currentCategory = category;
+  
   switch (category) {
     case "my-style":
       // Filter to show similar to user's preferred style
       toast.info("나의 스타일 필터 적용");
+      // Clear bookmark results
+      bookmarkResults = [];
+      renderSearchResults(searchResults);
       break;
     case "my-reference":
       // Show user's saved references
-      toast.info("나의 레퍼런스 필터 적용");
+      await loadBookmarks();
       break;
     case "insights":
       // Show high-scoring examples
       currentFilters.minScore = 80;
-      quickSearchFromLastAnalysis();
+      bookmarkResults = [];
+      await quickSearchFromLastAnalysis();
       break;
     default:
       currentFilters = { format: null, fixScope: null, minScore: null };
+      bookmarkResults = [];
+      renderSearchResults(searchResults);
+  }
+}
+
+/**
+ * Load user's bookmarks
+ */
+async function loadBookmarks() {
+  try {
+    showLoading("북마크 로딩 중...");
+    const result = await getBookmarks({ limit: 50 });
+    hideLoading();
+    
+    if (result.success && result.bookmarks) {
+      bookmarkResults = result.bookmarks;
+      renderBookmarks(bookmarkResults);
+      toast.success(`${bookmarkResults.length}개의 북마크를 불러왔습니다`);
+    } else {
+      bookmarkResults = [];
+      renderBookmarks([]);
+      toast.info("저장된 북마크가 없습니다");
+    }
+  } catch (error) {
+    hideLoading();
+    console.error("[Search] Failed to load bookmarks:", error);
+    toast.error("북마크를 불러오는 중 오류가 발생했습니다");
+    bookmarkResults = [];
+    renderBookmarks([]);
+  }
+}
+
+/**
+ * Render bookmarks in the search results grid
+ */
+function renderBookmarks(bookmarks) {
+  if (!resultsGrid) return;
+  
+  if (bookmarks.length === 0) {
+    resultsGrid.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⭐</div>
+        <p class="empty-state-title">저장된 레퍼런스가 없습니다</p>
+        <p class="empty-state-desc">검색 결과에서 저장 버튼을 눌러 레퍼런스를 저장하세요</p>
+      </div>
+    `;
+    return;
+  }
+  
+  resultsGrid.innerHTML = bookmarks.map((bookmark) => {
+    const analysis = bookmark.analysis || {};
+    const imageUrl = analysis.imageUrl || "";
+    const formatLabel = analysis.formatPrediction || "Unknown";
+    const score = analysis.overallScore || 0;
+    
+    return `
+      <div class="searchImgCard" data-bookmark-id="${bookmark.bookmarkId}" data-analysis-id="${bookmark.analysisId}">
+        <img src="${imageUrl}" alt="북마크" class="searchImg" loading="lazy">
+        <div class="imgOverlay">
+          <button class="img-btn shareBtn" data-action="bookmarkShare" data-analysis-id="${bookmark.analysisId}">
+            <img src="./img/share.svg" alt="공유">
+          </button>
+          <button class="img-btn downBtn" data-action="bookmarkDelete" data-bookmark-id="${bookmark.bookmarkId}">
+            <img src="./img/delete_white.svg" alt="삭제">
+          </button>
+        </div>
+        <div class="bookmark-info" style="position: absolute; bottom: 0.5vw; left: 0.5vw; right: 0.5vw; background: rgba(0,0,0,0.6); color: white; padding: 0.5vw; border-radius: 0.5vw; font-size: 0.8vw;">
+          <div>${formatLabel}</div>
+          <div>점수: ${score}%</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+  
+  // Setup click handlers for bookmark cards
+  setupBookmarkCardListeners();
+}
+
+/**
+ * Setup click handlers for bookmark cards
+ */
+function setupBookmarkCardListeners() {
+  const bookmarkCards = resultsGrid?.querySelectorAll(".searchImgCard[data-bookmark-id]");
+  if (!bookmarkCards) return;
+  
+  bookmarkCards.forEach((card) => {
+    // Click card to view analysis
+    card.addEventListener("click", (e) => {
+      // Don't trigger if clicking buttons
+      if (e.target.closest(".img-btn")) return;
+      
+      const analysisId = card.dataset.analysisId;
+      if (analysisId) {
+        navigateToAnalysis(analysisId);
+      }
+    });
+    
+    // Share button
+    const shareBtn = card.querySelector('[data-action="bookmarkShare"]');
+    if (shareBtn) {
+      shareBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const analysisId = card.dataset.analysisId;
+        if (analysisId) {
+          await handleShare(analysisId);
+        }
+      });
+    }
+    
+    // Delete button
+    const deleteBtn = card.querySelector('[data-action="bookmarkDelete"]');
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const bookmarkId = card.dataset.bookmarkId;
+        if (bookmarkId) {
+          await handleDeleteBookmark(bookmarkId);
+        }
+      });
+    }
+  });
+}
+
+/**
+ * Handle bookmark deletion
+ */
+async function handleDeleteBookmark(bookmarkId) {
+  if (!confirm("이 북마크를 삭제하시겠습니까?")) {
+    return;
+  }
+  
+  try {
+    showLoading("삭제 중...");
+    const result = await deleteBookmark({ bookmarkId });
+    hideLoading();
+    
+    if (result.success) {
+      toast.success(result.message || "북마크가 삭제되었습니다");
+      // Reload bookmarks if we're on the my-reference tab
+      if (currentCategory === "my-reference") {
+        await loadBookmarks();
+      }
+    } else {
+      toast.error("북마크 삭제에 실패했습니다");
+    }
+  } catch (error) {
+    hideLoading();
+    console.error("[Search] Delete bookmark failed:", error);
+    toast.error("북마크 삭제 중 오류가 발생했습니다");
   }
 }
 
@@ -666,63 +893,92 @@ function handleCategoryChange(category) {
 // Event Listeners
 // ============================================================================
 
+const searchUnsubscribeFunctions = [];
+
 function setupEventListeners() {
   // Search button (searchIcon)
-  searchBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    quickSearchFromLastAnalysis();
-  });
-
-  // Image upload button (uploadIcon)
-  uploadBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    uploadInput?.click();
-  });
-
-  // File input change
-  uploadInput?.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      searchByImage(file);
-      // Reset input to allow same file selection
-      uploadInput.value = "";
-    }
-  });
-
-  // Filter button
-  filterBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    openFilterPage();
-  });
-
-  // Text search input (Enter key or Ctrl+Enter)
-  searchInput?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  if (searchBtn) {
+    const unsub = onClick(searchBtn, (e) => {
       e.preventDefault();
-      const query = searchInput.value.trim();
-      if (query.length >= 2) {
+      const query = searchInput?.value.trim();
+      if (query && query.length >= 2) {
         performTextSearch(query);
       } else {
-        toast.info("검색어를 2자 이상 입력해주세요");
+        // Fallback to image-based search if no text
+        quickSearchFromLastAnalysis();
       }
-    }
-  });
+    });
+    searchUnsubscribeFunctions.push(unsub);
+  }
 
-  // Search button also triggers text search
-  searchBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    const query = searchInput?.value.trim();
-    if (query && query.length >= 2) {
-      performTextSearch(query);
-    } else {
-      // Fallback to image-based search if no text
-      quickSearchFromLastAnalysis();
-    }
-  });
+  // Image upload button (uploadIcon)
+  if (uploadBtn) {
+    const unsub = onClick(uploadBtn, (e) => {
+      e.preventDefault();
+      uploadInput?.click();
+    });
+    searchUnsubscribeFunctions.push(unsub);
+  }
+
+  // File input change
+  if (uploadInput) {
+    const unsub = onChange(uploadInput, (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        searchByImage(file);
+        // Reset input to allow same file selection
+        uploadInput.value = "";
+      }
+    });
+    searchUnsubscribeFunctions.push(unsub);
+  }
+
+  // Filter button
+  if (filterBtn) {
+    const unsub = onClick(filterBtn, (e) => {
+      e.preventDefault();
+      openFilterPage();
+    });
+    searchUnsubscribeFunctions.push(unsub);
+  }
+
+  // Text search input (Enter key or Ctrl+Enter) with debounce for typing
+  if (searchInput) {
+    // Debounced search for typing (optional - can be enabled for auto-search)
+    const debouncedSearch = debounce((query) => {
+      if (query && query.length >= 2) {
+        performTextSearch(query);
+      }
+    }, 500);
+
+    // Enter key handler
+    const unsub = onKeyDown(searchInput, (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const query = searchInput.value.trim();
+        if (query.length >= 2) {
+          performTextSearch(query);
+        } else {
+          toast.info("검색어를 2자 이상 입력해주세요");
+        }
+      }
+    });
+    searchUnsubscribeFunctions.push(unsub);
+
+    // Optional: Auto-search on typing (debounced)
+    // Uncomment to enable:
+    // const unsubInput = onInput(searchInput, (e) => {
+    //   const query = e.target.value.trim();
+    //   if (query.length >= 2) {
+    //     debouncedSearch(query);
+    //   }
+    // });
+    // searchUnsubscribeFunctions.push(unsubInput);
+  }
 
   // Event delegation for dynamically created search result cards
   if (resultsGrid) {
-    resultsGrid.addEventListener("click", (e) => {
+    const unsub1 = addEventListener(resultsGrid, "click", (e) => {
       const card = e.target.closest(".searchImgCard");
       if (!card) return;
 
@@ -758,10 +1014,11 @@ function setupEventListeners() {
         }
       }
     });
+    searchUnsubscribeFunctions.push(unsub1);
 
     // Hover effects via CSS (handled by .searchImgCard:hover)
     // Icon hover effects
-    resultsGrid.addEventListener("mouseenter", (e) => {
+    const unsub2 = addEventListener(resultsGrid, "mouseenter", (e) => {
       const btn = e.target.closest(".img-btn");
       if (btn) {
         const icon = btn.querySelector("img");
@@ -772,8 +1029,9 @@ function setupEventListeners() {
         }
       }
     }, true);
+    searchUnsubscribeFunctions.push(unsub2);
 
-    resultsGrid.addEventListener("mouseleave", (e) => {
+    const unsub3 = addEventListener(resultsGrid, "mouseleave", (e) => {
       const btn = e.target.closest(".img-btn");
       if (btn) {
         const icon = btn.querySelector("img");
@@ -784,6 +1042,7 @@ function setupEventListeners() {
         }
       }
     }, true);
+    searchUnsubscribeFunctions.push(unsub3);
   }
 
   // Setup category tabs
@@ -792,7 +1051,7 @@ function setupEventListeners() {
   // Modal action buttons (event delegation)
   const modalBox = document.getElementById("searchResultModalBox");
   if (modalBox) {
-    modalBox.addEventListener("click", (e) => {
+    const unsub = addEventListener(modalBox, "click", (e) => {
       const action = e.target.closest("[id^='searchModal']")?.id;
       const resultId = modalBox.dataset.resultId;
       const resultIndex = parseInt(modalBox.dataset.resultIndex, 10);
@@ -811,7 +1070,14 @@ function setupEventListeners() {
         handleDownload(resultId);
       }
     });
+    searchUnsubscribeFunctions.push(unsub);
   }
+
+  // Register cleanup callback
+  registerCleanup(() => {
+    searchUnsubscribeFunctions.forEach((unsub) => unsub());
+    searchUnsubscribeFunctions.length = 0;
+  });
 }
 
 /**

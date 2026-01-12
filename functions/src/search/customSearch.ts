@@ -65,6 +65,10 @@ async function callCustomSearchAPI(
 ): Promise<any> {
   const { apiKey, engineId } = getSearchApiCredentials();
   
+  // Log credentials status (masked)
+  console.log(`[customSearch] API Key present: ${!!apiKey}, Engine ID present: ${!!engineId}`);
+  console.log(`[customSearch] Engine ID: ${engineId?.substring(0, 10)}...`);
+  
   const params = new URLSearchParams({
     key: apiKey,
     cx: engineId,
@@ -79,15 +83,41 @@ async function callCustomSearchAPI(
   
   console.log(`[customSearch] Calling API: ${url.replace(apiKey, "***")}`);
 
-  const response = await fetch(url);
+  let response: Response;
+  try {
+    response = await fetch(url);
+  } catch (fetchError) {
+    console.error(`[customSearch] Fetch failed:`, fetchError);
+    throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+  }
   
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[customSearch] API error: ${response.status} - ${errorText}`);
-    throw new Error(`Custom Search API error: ${response.status}`);
+    
+    // Parse error response if possible
+    let errorMessage = `Custom Search API error: ${response.status}`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.error?.message) {
+        errorMessage = `Custom Search API error: ${errorJson.error.message}`;
+      }
+    } catch (e) {
+      // Ignore JSON parse error, use default message
+    }
+    
+    throw new Error(errorMessage);
   }
 
-  return await response.json();
+  let jsonResponse: any;
+  try {
+    jsonResponse = await response.json();
+  } catch (parseError) {
+    console.error(`[customSearch] JSON parse error:`, parseError);
+    throw new Error(`Failed to parse API response: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+  }
+
+  return jsonResponse;
 }
 
 /**
@@ -96,18 +126,32 @@ async function callCustomSearchAPI(
 function adaptSearchResponse(apiResponse: any): CustomSearchResponse {
   const items: CustomSearchItem[] = [];
   
+  console.log(`[customSearch] API response structure:`, {
+    hasItems: !!apiResponse.items,
+    itemsIsArray: Array.isArray(apiResponse.items),
+    itemsCount: apiResponse.items?.length || 0,
+    hasSearchInfo: !!apiResponse.searchInformation,
+  });
+  
   if (apiResponse.items && Array.isArray(apiResponse.items)) {
     apiResponse.items.forEach((item: any, index: number) => {
-      items.push({
-        id: `custom_${index}_${Date.now()}`,
-        imageUrl: item.link || item.image?.thumbnailLink || "",
-        title: item.title || "",
-        snippet: item.snippet || "",
-        displayLink: item.displayLink || "",
-        contextLink: item.image?.contextLink || item.link || "",
-        thumbnailUrl: item.image?.thumbnailLink || item.link || "",
-      });
+      try {
+        items.push({
+          id: `custom_${index}_${Date.now()}`,
+          imageUrl: item.link || item.image?.thumbnailLink || "",
+          title: item.title || "",
+          snippet: item.snippet || "",
+          displayLink: item.displayLink || "",
+          contextLink: item.image?.contextLink || item.link || "",
+          thumbnailUrl: item.image?.thumbnailLink || item.link || "",
+        });
+      } catch (itemError) {
+        console.error(`[customSearch] Error processing item ${index}:`, itemError);
+        // Skip invalid items instead of failing
+      }
     });
+  } else {
+    console.warn(`[customSearch] No items found in API response`);
   }
 
   return {
@@ -164,6 +208,16 @@ async function customSearchHandler(
   try {
     console.log(`[customSearch] Searching for: "${query}" (start: ${start}, num: ${num}) by user ${userId}`);
 
+    // Check credentials before API call
+    try {
+      const credentials = getSearchApiCredentials();
+      console.log(`[customSearch] Credentials check passed: API Key=${!!credentials.apiKey}, Engine ID=${!!credentials.engineId}`);
+    } catch (credError) {
+      console.error(`[customSearch] Credentials check failed:`, credError);
+      // Re-throw credential errors as-is (they're already HttpsError)
+      throw credError;
+    }
+
     const apiResponse = await callCustomSearchAPI(query, start, num);
     const adaptedResponse = adaptSearchResponse(apiResponse);
 
@@ -171,6 +225,20 @@ async function customSearchHandler(
 
     return adaptedResponse;
   } catch (error) {
+    // Log detailed error information
+    console.error(`[customSearch] Error details:`, {
+      errorType: error?.constructor?.name,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      isHttpsError: error instanceof functions.https.HttpsError,
+      errorCode: error instanceof functions.https.HttpsError ? error.code : undefined,
+    });
+    
+    // If it's already an HttpsError (from credential check), re-throw as-is
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    
+    // Otherwise, wrap with handleError
     throw handleError(error, "customSearch", userId);
   }
 }

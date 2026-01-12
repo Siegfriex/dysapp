@@ -22,6 +22,8 @@ export const RATE_LIMITS = {
   CUSTOM_SEARCH: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   SAVE_ITEM: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 requests per minute
   GET_ANALYSES: { maxRequests: 60, windowMs: 60 * 1000 }, // 60 requests per minute
+  GET_BOOKMARKS: { maxRequests: 60, windowMs: 60 * 1000 }, // 60 requests per minute
+  DELETE_BOOKMARK: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
   DEFAULT: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
 } as const;
 

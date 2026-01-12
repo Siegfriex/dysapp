@@ -106,11 +106,43 @@ export function handleError(
     return error;
   }
 
-  // Log the error
-  logError(functionName, userId, error);
+  // Log the error with more context
+  logError(functionName, userId, error, {
+    errorType: error?.constructor?.name,
+    errorMessage: error instanceof Error ? error.message : String(error),
+  });
+
+  // Try to determine more specific error code based on error message
+  let errorCode: functions.https.FunctionsErrorCode = defaultCode;
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Network/timeout errors
+  if (errorMessage.includes("Network") || errorMessage.includes("fetch") || errorMessage.includes("ECONNREFUSED")) {
+    errorCode = "unavailable";
+  }
+  // Timeout errors
+  else if (errorMessage.includes("timeout") || errorMessage.includes("deadline")) {
+    errorCode = "deadline-exceeded";
+  }
+  // API errors (4xx)
+  else if (errorMessage.includes("400") || errorMessage.includes("Bad Request")) {
+    errorCode = "invalid-argument";
+  }
+  // API errors (401/403)
+  else if (errorMessage.includes("401") || errorMessage.includes("403") || errorMessage.includes("Unauthorized") || errorMessage.includes("Forbidden")) {
+    errorCode = "permission-denied";
+  }
+  // API errors (429)
+  else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
+    errorCode = "resource-exhausted";
+  }
+  // API errors (5xx)
+  else if (errorMessage.includes("500") || errorMessage.includes("502") || errorMessage.includes("503") || errorMessage.includes("504")) {
+    errorCode = "unavailable";
+  }
 
   // Create user-friendly error
-  return createUserError(defaultCode, "", functionName, userId, error);
+  return createUserError(errorCode, "", functionName, userId, error);
 }
 
 

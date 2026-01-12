@@ -1,21 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<!-- =========================================
+     페이지: 검색 필터 페이지 (filter.html)
+     ========================================= 
+     목적: 검색 결과를 필터링하기 위한 고급 필터 설정 페이지
+     
+     주요 기능:
+     - 색상 선택 필터
+     - 내 스타일 반영 비율 조정 (슬라이더)
+     - 연관 키워드 추가/관리
+     - 저장된 필터 불러오기/삭제
+     - 필터 저장 및 적용
+     
+     필터 옵션:
+     1. 내 선호 정보 불러오기: 사용자의 선호 스타일 정보 표시
+     2. 내 필터 불러오기: 저장된 필터 목록 표시 및 불러오기
+     3. 현재 필터 저장: 현재 설정한 필터를 저장
+     
+     관련 스크립트:
+     - 인라인 JavaScript로 필터 UI 로직 처리
+     - 필터 저장 시 sessionStorage 사용
+     - 필터 적용 후 searchTab.html로 복귀
+     
+     참고:
+     - 이 페이지는 searchTab.html의 필터 버튼 클릭 시 이동
+     - 필터 설정 후 "저장하기" 버튼으로 적용
+-->
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>filter</title>
+    <title>검색 필터 - Dys</title>
+    
+    <!-- 전역 스타일시트 -->
     <link rel="stylesheet" href="./common.css">
+    
+    <!-- 외부 폰트 -->
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    
+    <!-- HTML Include 유틸리티 -->
     <script src="./includHTML.js" defer></script>
 </head>
 
 <body>
     <div class="wrap">
-        <!-- 그냥 서칭탭 가리고 하기 귀찮아서 필터 탭 따로 빼둔 거니까 기존 서칭탭에 붙여넣으시려면 넣으셔도 됩니다 -->
+        <!-- 네비게이션 바 -->
         <nav data-include-path="nav.html"></nav>
+        
+        <!-- 메인 콘텐츠 영역 -->
         <main class="filter_main">
             <section class="search_box">
                 <textarea name="text" class="search" placeholder="검색할 텍스트를 입력해주세요."></textarea>
