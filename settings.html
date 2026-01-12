@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환경설정 - Dys</title>
+    <link rel="stylesheet" href="./common.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUITE/fonts/static/woff2/SUITE.css" rel="stylesheet">
+    <script src="./includHTML.js" defer></script>
+    <script type="module">
+        import { initApp } from './scripts/app.js';
+        initApp();
+    </script>
+    <script type="module" src="./scripts/settings.js"></script>
+</head>
+<body>
+    <div class="wrap">
+        <nav data-include-path="nav.html"></nav>
+        <main class="settings_main">
+            <!-- Page Header -->
+            <div class="settings-header">
+                <h1 class="settings-title">환경설정</h1>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Settings sections will be rendered by settings.js -->
+            </div>
+        </main>
+    </div>
+</body>
+</html>

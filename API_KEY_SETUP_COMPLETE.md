@@ -16,3 +16,4 @@ GEMINI_API_KEY=<YOUR_KEY>
 firebase functions:config:set google.ai_api_key="<YOUR_KEY>" --project=dysapp1210
 
 
+

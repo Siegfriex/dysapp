@@ -345,13 +345,14 @@ function renderHeader() {
 }
 
 /**
- * Generate summary text based on analysis (리포트 형태)
+ * Generate summary text based on analysis (한 문장 슬로건 형태)
  */
 function generateSummary(analysis) {
   // 서버에서 제공한 진단 요약을 우선 사용
   const diagnosis = analysis.layer1?.diagnosis;
   if (diagnosis && diagnosis.trim()) {
-    return diagnosis;
+    // 긴 텍스트를 한 문장 슬로건으로 요약
+    return summarizeToSlogan(diagnosis, analysis);
   }
 
   // 진단이 없을 경우에만 폴백
@@ -360,13 +361,65 @@ function generateSummary(analysis) {
   const scopeLabel = fixScope?.label || "";
 
   if (fixScope?.isRebuild) {
-    return `${format.label} 디자인입니다. ${scopeLabel}가 필요합니다. 구조적 문제가 발견되었습니다.`;
+    return `${format.label} 디자인입니다. ${scopeLabel}가 필요합니다.`;
   } else if (score.value >= 80) {
     return `${tone} 무드의 완성도 높은 ${format.label} 작업물입니다.`;
   } else if (score.value >= 60) {
     return `${tone} 분위기의 ${format.label} 디자인입니다. ${scopeLabel}을 통해 완성도를 높일 수 있습니다.`;
   } else {
     return `${format.label} 디자인입니다. 구조적 개선이 필요합니다.`;
+  }
+}
+
+/**
+ * 긴 진단 텍스트를 한 문장 슬로건으로 요약
+ */
+function summarizeToSlogan(diagnosis, analysis) {
+  if (!diagnosis || diagnosis.length < 50) {
+    return diagnosis; // 짧은 텍스트는 그대로 반환
+  }
+
+  const { fixScope, score } = analysis;
+  
+  // 핵심 키워드 추출
+  const hasStructure = diagnosis.includes("구조") || diagnosis.includes("구조화") || diagnosis.includes("위계");
+  const hasDetail = diagnosis.includes("디테일") || diagnosis.includes("튜닝") || diagnosis.includes("개선");
+  const isGood = diagnosis.includes("명확") || diagnosis.includes("잘") || diagnosis.includes("탄탄") || diagnosis.includes("우수");
+  const needsImprovement = diagnosis.includes("개선") || diagnosis.includes("필요") || diagnosis.includes("느리");
+
+  // 점수 기반 판단
+  const isHighScore = score?.value >= 80;
+  const isMediumScore = score?.value >= 60 && score?.value < 80;
+
+  // 슬로건 생성
+  if (isGood && hasDetail && needsImprovement) {
+    // 구조는 좋지만 디테일 튜닝 필요
+    return "구조는 탄탄하나 디테일 튜닝으로 완성도를 높일 수 있습니다.";
+  } else if (isGood && !needsImprovement) {
+    // 완성도 높음
+    return "전반적으로 구조가 우수한 디자인입니다.";
+  } else if (hasStructure && needsImprovement && fixScope?.isRebuild) {
+    // 구조적 문제
+    return "구조적 개선이 필요한 디자인입니다.";
+  } else if (hasDetail && needsImprovement) {
+    // 디테일 튜닝 필요
+    return "디테일 튜닝을 통해 완성도를 높일 수 있습니다.";
+  } else if (isHighScore) {
+    return "완성도 높은 디자인입니다.";
+  } else if (isMediumScore) {
+    return "디테일 튜닝으로 완성도를 높일 수 있습니다.";
+  } else {
+    // 기본 요약: 첫 문장만 추출하거나 핵심만 추출
+    const sentences = diagnosis.split(/[.。]/).filter(s => s.trim().length > 0);
+    if (sentences.length > 0) {
+      const firstSentence = sentences[0].trim();
+      // 첫 문장이 너무 길면 더 요약
+      if (firstSentence.length > 60) {
+        return "구조는 우수하나 디테일 개선이 필요한 단계입니다.";
+      }
+      return firstSentence + ".";
+    }
+    return "디자인 분석이 완료되었습니다.";
   }
 }
 
@@ -896,6 +949,12 @@ async function sendChatMessage() {
 function addChatMessage(role, content) {
   if (!chatContainer) return;
 
+  // 디버깅: 콘솔에 전체 내용 출력
+  console.log(`[Chat] Adding ${role} message, length: ${content?.length || 0}`);
+  if (content && content.length > 1000) {
+    console.log(`[Chat] Long message detected: ${content.substring(0, 100)}...`);
+  }
+
   const messageClass = role === "user" ? "bubble_user" : "bubble_ai";
   const bubbleClass = role === "user" ? "bubbleBox1" : "bubbleBox2";
   const textClass = role === "user" ? "promptB_user" : "promptB_ai";
@@ -922,8 +981,16 @@ function addChatMessage(role, content) {
   // Add to chat container
   chatContainer.appendChild(messageDiv);
 
-  // Scroll to bottom (use requestAnimationFrame for better performance)
+  // 디버깅: 렌더링 후 실제 높이 확인
   requestAnimationFrame(() => {
+    const renderedText = messageDiv.querySelector(`.${textClass}`);
+    if (renderedText) {
+      console.log(`[Chat] Rendered height: ${renderedText.offsetHeight}px, scrollHeight: ${renderedText.scrollHeight}px`);
+      // 높이가 제한되어 있는지 확인
+      if (renderedText.scrollHeight > renderedText.offsetHeight) {
+        console.warn(`[Chat] Text may be truncated! scrollHeight (${renderedText.scrollHeight}px) > offsetHeight (${renderedText.offsetHeight}px)`);
+      }
+    }
     messageDiv.scrollIntoView({ behavior: "smooth", block: "end" });
   });
 }
@@ -948,13 +1015,37 @@ function stripEmojis(text) {
 
 /**
  * Format chat content (convert markdown-like to HTML and strip emojis)
+ * Safely handles HTML escaping to prevent broken rendering
  */
 function formatChatContent(content) {
-  const cleaned = stripEmojis(content);
-  return cleaned
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n/g, "<br/>")
-    .replace(/###\s*(.*?)(?:<br\/>|$)/g, "<strong>$1</strong><br/>");
+  if (!content) return "";
+  
+  // 1. Strip emojis
+  let cleaned = stripEmojis(content);
+
+  // 2. Escape HTML characters to prevent broken layout from unclosed tags or < characters
+  cleaned = cleaned
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  // 3. Convert basic markdown to HTML
+  // Bold
+  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  
+  // Headers (###)
+  cleaned = cleaned.replace(/###\s*(.*?)(?:$|\n)/g, "<strong>$1</strong><br/>");
+  
+  // Lists (- item) -> simple bullet handling with line breaks
+  cleaned = cleaned.replace(/^\s*-\s+(.*)$/gm, "• $1");
+
+  // Line breaks - 더 강력한 처리
+  cleaned = cleaned.replace(/\n\n/g, "<br/><br/>"); // 이중 줄바꿈
+  cleaned = cleaned.replace(/\n/g, "<br/>"); // 단일 줄바꿈
+
+  return cleaned;
 }
 
 /**

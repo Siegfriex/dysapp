@@ -106,3 +106,4 @@ firebase functions:log --only saveItem
 3. **검증**: 배포 후 로그 및 기능 테스트
 4. **모니터링**: Firebase Console에서 함수 실행 상태 확인
 
+

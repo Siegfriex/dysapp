@@ -22,15 +22,38 @@
                 <p class="mypage-subtitle">나의 디자인 분석 히스토리와 프로필을 관리하세요</p>
             </div>
 
-            <!-- Profile Section (Dynamically rendered by mypage.js) -->
-            <section class="profile-section"></section>
+            <!-- 2단 레이아웃 컨테이너 -->
+            <div class="mypage-layout">
+                <!-- 좌측 컬럼: 프로필 및 주 포스터 -->
+                <aside class="left-column">
+                    <!-- Profile Section (Dynamically rendered by mypage.js) -->
+                    <section class="profile-section"></section>
 
-            <!-- History Section -->
-            <section class="history-section">
-                <h3 class="section-title">분석 히스토리</h3>
-                <div class="history-grid"></div>
-                <button class="load-more-btn" style="display: none;">더 보기</button>
-            </section>
+                    <!-- Main Portfolio Section (Bento Grid) -->
+                    <section class="portfolio-section">
+                        <h3 class="portfolio-title">주 그래픽 포스터</h3>
+                        <div class="bento-grid"></div>
+                    </section>
+                </aside>
+
+                <!-- 우측 컬럼: 스타일 갤러리 -->
+                <div class="right-column">
+                    <!-- Style Gallery Section -->
+                    <section class="style-gallery-section">
+                        <div class="gallery-header">
+                            <h3 class="gallery-title">스타일 갤러리</h3>
+                            <div class="gallery-tabs">
+                                <button class="gallery-tab active" data-tab="all">전체</button>
+                                <button class="gallery-tab" data-tab="typo">타이포</button>
+                                <button class="gallery-tab" data-tab="composition">컴퍼지션</button>
+                                <button class="gallery-tab" data-tab="effect">이펙트</button>
+                            </div>
+                        </div>
+                        <div class="gallery-grid"></div>
+                        <button class="load-more-btn" style="display: none;">더 보기</button>
+                    </section>
+                </div>
+            </div>
         </main>
     </div>
 </body>

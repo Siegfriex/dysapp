@@ -78,3 +78,4 @@ Write-Host "이제 다시 배포를 시도하세요:" -ForegroundColor Yellow
 Write-Host "  firebase deploy --only functions" -ForegroundColor White
 
 
+

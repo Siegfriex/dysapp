@@ -221,31 +221,89 @@ export async function updateUserProfileHandler(
   }
 
   const userId = request.auth.uid;
-  const data = request.data;
+  const data = request.data || {}; // null/undefined 체크
 
   try {
-    console.log(`[updateUserProfile] User ${userId}`);
+    // 2. Request data validation
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Invalid request data: data must be an object"
+      );
+    }
 
-    // 2. Build update object
+    console.log(`[updateUserProfile] User ${userId}`, JSON.stringify(data));
+
+    // 3. Build update object with validation
     const updates: Record<string, unknown> = {
       updatedAt: FieldValue.serverTimestamp(),
     };
 
     if (data.displayName !== undefined) {
-      updates.displayName = data.displayName;
+      if (typeof data.displayName !== 'string') {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "displayName must be a string"
+        );
+      }
+      if (data.displayName.trim().length === 0) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "displayName cannot be empty"
+        );
+      }
+      updates.displayName = data.displayName.trim();
     }
 
     if (data.preferences !== undefined) {
+      if (typeof data.preferences !== 'object' || data.preferences === null || Array.isArray(data.preferences)) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "preferences must be an object"
+        );
+      }
+      // preferences 구조 검증
+      if (data.preferences.preferredFormats !== undefined && !Array.isArray(data.preferences.preferredFormats)) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "preferences.preferredFormats must be an array"
+        );
+      }
+      if (data.preferences.preferredColors !== undefined && !Array.isArray(data.preferences.preferredColors)) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "preferences.preferredColors must be an array"
+        );
+      }
+      if (data.preferences.language !== undefined && typeof data.preferences.language !== 'string') {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "preferences.language must be a string"
+        );
+      }
       updates.preferences = data.preferences;
     }
 
-    // 3. Update user document
+    // 4. Check if there are any fields to update (besides updatedAt)
+    if (Object.keys(updates).length === 1) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "No valid fields to update. Provide displayName or preferences."
+      );
+    }
+
+    // 5. Update user document
     await db.collection(COLLECTIONS.USERS).doc(userId).update(updates);
 
     console.log(`[updateUserProfile] Profile updated for user ${userId}`);
 
     return { success: true };
   } catch (error) {
+    // HttpsError는 그대로 전달
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    // 기타 에러는 handleError로 처리
     throw handleError(error, "updateUserProfile", userId);
   }
 }

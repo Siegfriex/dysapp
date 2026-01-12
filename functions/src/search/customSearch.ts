@@ -21,9 +21,39 @@ import { checkRateLimit } from "../utils/rateLimiter";
 import { handleError } from "../utils/errorHandler";
 
 // GCP Custom Search API Configuration
-const GCP_SEARCH_API_KEY = "AIzaSyBJA2cZp9sn1DeaqWxMGMFecOprZHzqHcA";
-const GCP_SEARCH_ENGINE_ID = "665cb462ec68043bc";
 const SEARCH_API_BASE_URL = "https://www.googleapis.com/customsearch/v1";
+
+/**
+ * Get GCP Custom Search API credentials from environment variables
+ * Firebase Functions v2에서 Secret은 자동으로 환경 변수로 매핑됩니다.
+ */
+function getSearchApiCredentials(): { apiKey: string; engineId: string } {
+  // Firebase Functions v2에서 Secret Manager의 Secret은
+  // 함수 정의에 secrets 옵션으로 명시하면 자동으로 환경 변수로 매핑됨
+  // 값에 포함될 수 있는 줄바꿈 문자 제거를 위해 trim() 사용
+  const apiKey = process.env.GCP_SEARCH_API_KEY?.trim();
+  const engineId = process.env.GCP_SEARCH_ENGINE_ID?.trim();
+
+  if (!apiKey) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "GCP_SEARCH_API_KEY is not configured. " +
+      "Please ensure the secret is set in Firebase Console > Functions > Configuration > Secrets " +
+      "and the function has 'secrets: [\"GCP_SEARCH_API_KEY\"]' in its configuration."
+    );
+  }
+
+  if (!engineId) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "GCP_SEARCH_ENGINE_ID is not configured. " +
+      "Please ensure the secret is set in Firebase Console > Functions > Configuration > Secrets " +
+      "and the function has 'secrets: [\"GCP_SEARCH_ENGINE_ID\"]' in its configuration."
+    );
+  }
+
+  return { apiKey, engineId };
+}
 
 /**
  * Call GCP Custom Search API
@@ -33,9 +63,11 @@ async function callCustomSearchAPI(
   start: number = 1,
   num: number = 10
 ): Promise<any> {
+  const { apiKey, engineId } = getSearchApiCredentials();
+  
   const params = new URLSearchParams({
-    key: GCP_SEARCH_API_KEY,
-    cx: GCP_SEARCH_ENGINE_ID,
+    key: apiKey,
+    cx: engineId,
     q: query,
     searchType: "image",
     safe: "active",
@@ -45,7 +77,7 @@ async function callCustomSearchAPI(
 
   const url = `${SEARCH_API_BASE_URL}?${params.toString()}`;
   
-  console.log(`[customSearch] Calling API: ${url.replace(GCP_SEARCH_API_KEY, "***")}`);
+  console.log(`[customSearch] Calling API: ${url.replace(apiKey, "***")}`);
 
   const response = await fetch(url);
   
@@ -151,7 +183,9 @@ export const customSearch = functions.https.onCall(
     region: FUNCTIONS_REGION,
     timeoutSeconds: TIMEOUTS.SEARCH_SIMILAR || 60,
     memory: MEMORY.SEARCH_SIMILAR || "256MiB",
+    secrets: ["GCP_SEARCH_API_KEY", "GCP_SEARCH_ENGINE_ID"],
   },
   customSearchHandler
 );
+
 

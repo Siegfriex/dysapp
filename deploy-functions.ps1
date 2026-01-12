@@ -64,3 +64,4 @@ if ($deploy -eq "Y" -or $deploy -eq "y") {
     Write-Host "`n배포를 건너뜁니다. 나중에 'firebase deploy --only functions' 명령어로 배포하세요." -ForegroundColor Yellow
 }
 
+

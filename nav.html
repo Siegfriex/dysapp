@@ -27,16 +27,15 @@
             <ul class="nav_ul nav_tab">
                 <li><a href="./index.html"><img src="./img/uploadTab.svg" style="width: 1.2vw;"></a></li>
                 <li><a href="./searchTab.html"><img src="./img/searchTab.svg" style="width: 1.4vw;"></a></li>
+                <li><a href="./mypage.html"><img src="./img/mypage.svg" style="width: 1.3vw;"></a></li>
                 <li><a href=""><img src="./img/alertTab.svg" style="width: 1.3vw;"></a></li>
             </ul>
 
             <div class="nav_ul nav_tab nav_ul3">
-                <button>
-
+                <button id="subscribeBtn" onclick="location.href='./subscribe.html'">
                         <img src="./img/suscribeTab.svg" style="width: 0.8vw;">
- 
                 </button>
-                <button id="settingsBtn">
+                <button id="settingsBtn" onclick="location.href='./settings.html'">
                     <img src="./img/setting.svg" style="width: 1.3vw;">
                 </button>
             </div>
@@ -49,11 +48,31 @@
         </div>
         
         <div id="settingsBox" class="settings-box">
-            <ul>
-                <li>프로필 설정</li>
-                <li>알림 설정</li>
-                <li>로그아웃</li>
-            </ul>
+            <div class="settings-header">
+                <h3>설정</h3>
+            </div>
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label>기본 분석 포맷</label>
+                    <select id="defaultFormat">
+                        <option value="all">모든 포맷</option>
+                        <option value="UX_UI">UX/UI</option>
+                        <option value="Editorial">Editorial</option>
+                        <option value="Poster">Poster</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>테마 설정</label>
+                    <select id="themeSetting">
+                        <option value="light">라이트 모드</option>
+                        <option value="dark">다크 모드</option>
+                    </select>
+                </div>
+                <ul class="settings-menu">
+                    <li><a href="./mypage.html">프로필 관리</a></li>
+                    <li><a href="#" id="logoutBtn">로그아웃</a></li>
+                </ul>
+            </div>
         </div>
     </div>
     <script defer>

@@ -55,7 +55,7 @@ export const healthCheck = functions.https.onCall(
   {
     region: FUNCTIONS_REGION,
     timeoutSeconds: 10,
-    memory: "128MiB",
+    memory: "256MiB",
   },
   async () => {
     return {

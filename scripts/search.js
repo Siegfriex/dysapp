@@ -422,12 +422,33 @@ function renderCustomSearchResults() {
 }
 
 /**
+ * Clean image URL to remove problematic parameters
+ * Removes format and auto parameters that can cause 406 errors
+ */
+function cleanImageUrl(url) {
+  if (!url) return "";
+  try {
+    const urlObj = new URL(url);
+    // Remove problematic parameters for known CDNs or globally
+    if (urlObj.hostname.includes('gcdn') || urlObj.hostname.includes('democratandchronicle')) {
+       urlObj.searchParams.delete('format'); // e.g. pjpg
+       urlObj.searchParams.delete('auto');   // e.g. webp
+    }
+    return urlObj.toString();
+  } catch (e) {
+    // If URL parsing fails, return original URL
+    return url;
+  }
+}
+
+/**
  * Create Custom Search result image HTML
  */
 function createCustomSearchImage(result, index) {
+  const imageUrl = cleanImageUrl(result.imageUrl || result.thumbnailUrl || '');
   return `
     <div class="searchImgCard" data-id="${result.id}" data-index="${index}" data-source="custom" data-search-query="${currentSearchQuery || ''}">
-      <img src="${result.imageUrl || result.thumbnailUrl || ''}" alt="${result.title || '이미지'}" class="searchImg" loading="lazy" title="${result.title || ''}">
+      <img src="${imageUrl}" alt="${result.title || '이미지'}" class="searchImg" loading="lazy" title="${result.title || ''}" referrerpolicy="no-referrer">
       <div class="imgOverlay">
         <button class="img-btn shareBtn" data-action="share" aria-label="공유">
           <img src="./img/share.svg" alt="" class="shareIcon">
@@ -863,11 +884,13 @@ async function handleDownload(resultId) {
     
     if (source === "custom") {
       result = customSearchResults.find((r) => r.id === resultId);
-      imageUrl = result?.imageUrl || result?.thumbnailUrl;
+      const rawImageUrl = result?.imageUrl || result?.thumbnailUrl;
+      imageUrl = cleanImageUrl(rawImageUrl);
       fileName = result?.title || `image_${resultId}.jpg`;
     } else {
       result = searchResults.find((r) => r.id === resultId);
-      imageUrl = result?.imageUrl;
+      const rawImageUrl = result?.imageUrl;
+      imageUrl = cleanImageUrl(rawImageUrl);
       fileName = result?.fileName || `design_${resultId}.png`;
     }
     
@@ -878,8 +901,10 @@ async function handleDownload(resultId) {
 
     showLoading("다운로드 준비 중...");
 
-    // Fetch image
-    const response = await fetch(imageUrl);
+    // Fetch image with no-referrer policy
+    const response = await fetch(imageUrl, {
+      referrerPolicy: 'no-referrer'
+    });
     if (!response.ok) {
       throw new Error("Failed to fetch image");
     }
@@ -1004,8 +1029,12 @@ function openResultModal(result) {
     const ocrTextEl = document.getElementById("searchModalOcrText");
     const ocrSection = document.getElementById("searchModalOcr");
 
-    if (imageEl) imageEl.src = result.imageUrl || result.thumbnailUrl || "";
-    if (imageEl) imageEl.alt = result.title || "이미지";
+    if (imageEl) {
+      const imageUrl = cleanImageUrl(result.imageUrl || result.thumbnailUrl || "");
+      imageEl.src = imageUrl;
+      imageEl.alt = result.title || "이미지";
+      imageEl.setAttribute('referrerpolicy', 'no-referrer');
+    }
     if (titleEl) titleEl.textContent = result.title || "이미지";
     
     // Generate recommendation reason
@@ -1052,8 +1081,12 @@ function openResultModal(result) {
     const ocrTextEl = document.getElementById("searchModalOcrText");
     const ocrSection = document.getElementById("searchModalOcr");
 
-    if (imageEl) imageEl.src = result.imageUrl || "";
-    if (imageEl) imageEl.alt = result.fileName || "";
+    if (imageEl) {
+      const imageUrl = cleanImageUrl(result.imageUrl || "");
+      imageEl.src = imageUrl;
+      imageEl.alt = result.fileName || "";
+      imageEl.setAttribute('referrerpolicy', 'no-referrer');
+    }
     if (titleEl) titleEl.textContent = result.fileName || "이미지";
     if (similarityEl) similarityEl.textContent = result.similarityLabel || "유사도";
     if (scoreEl) scoreEl.textContent = `${result.score || 0}점`;

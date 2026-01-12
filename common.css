@@ -219,6 +219,22 @@ body {
     padding: .5vw 0;
 }
 
+/* 현재 페이지 활성 상태 */
+.nav_tab a.active,
+.nav_tab li.active a {
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7492%) hue-rotate(260deg) brightness(95%) contrast(101%);
+}
+
+.nav_tab a:not(.active) {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.nav_tab a:not(.active):hover {
+    opacity: 0.9;
+}
+
 /* 아래 고정 역할 */
 .nav_ul3 {
     margin-top: auto;
@@ -252,36 +268,81 @@ body {
 } */
 
 .settings-box {
-    position: fixed;
-    bottom: auto;
-    top: auto;
-    left: auto;
-    /* sidebar 오른쪽 옆에 붙게 */
-    width: 10vw;
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 0.8vw;
-    border-radius: 0.5vw;
-    box-shadow: 0 0.5vw 1vw rgba(0, 0, 0, 0.1);
     display: none;
-    /* z-index: 99999999; */
-    z-index: 10;
+    position: fixed;
+    bottom: 5vw;
+    left: 5vw;
+    width: 15vw;
+    background: white;
+    border-radius: 1vw;
+    box-shadow: 0 0.5vw 2vw rgba(0,0,0,0.1);
+    z-index: 1000;
+    overflow: hidden;
+    border: 1px solid #E7E2FF;
+    padding: 0;
 }
 
-.settings-box ul {
+.settings-header {
+    padding: 1vw;
+    border-bottom: 1px solid #E7E2FF;
+    background: #F9FAFC;
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 1vw;
+    color: #1B1233;
+}
+
+.settings-content {
+    padding: 1vw;
+}
+
+.setting-group {
+    margin-bottom: 1vw;
+}
+
+.setting-group label {
+    display: block;
+    font-size: 0.8vw;
+    color: #7C7895;
+    margin-bottom: 0.4vw;
+}
+
+.setting-group select {
+    width: 100%;
+    padding: 0.5vw;
+    border: 1px solid #E7E2FF;
+    border-radius: 0.4vw;
+    font-size: 0.9vw;
+    color: #1B1233;
+}
+
+.settings-menu {
     list-style: none;
     padding: 0;
     margin: 0;
+    border-top: 1px solid #E7E2FF;
+    padding-top: 0.5vw;
 }
 
-.settings-box li {
-    padding: 0.5vw 0;
+.settings-menu li {
+    margin-bottom: 0.5vw;
+}
+
+.settings-menu li a {
+    display: block;
+    padding: 0.5vw;
+    text-decoration: none;
+    color: #1B1233;
     font-size: 0.9vw;
-    cursor: pointer;
+    border-radius: 0.4vw;
+    transition: background 0.2s;
 }
 
-.settings-box li:hover {
-    background: #f3f3f3;
+.settings-menu li a:hover {
+    background: #F0F0FF;
+    color: #875CFF;
 }
 
 
@@ -639,14 +700,7 @@ main {
     background: var(--background);
     z-index: 0;
     flex-direction: column;
-    align-items: center;
-}
-
-.Report_main .promptArraw {
-    position: absolute;
-    /* margin-left: 43vw; */
-    top: 2vw;
-    width: 1.3vw;
+    /* align-items: center; */
 }
 
 .H1Text {
@@ -662,6 +716,7 @@ main {
     height: 4vw;
     width: 87vw;
     margin: 0 auto;
+    padding-left: 0.8vw; /* 데이터박스 컨테이너와 좌측 정렬 일치 */
     box-sizing: border-box;
     display: inline-flex;
     align-items: flex-end;
@@ -713,13 +768,14 @@ main {
 .overall-analysis-section {
     width: 87vw;
     margin: 2vw auto 1vw auto;
+    padding-left: 0.8vw; /* 데이터박스 컨테이너와 좌측 정렬 일치 */
 }
 
 .overall-analysis-box {
     background: var(--background);
     border: 0.09vw solid var(--purpleB);
     border-radius: 2vw;
-    padding: 2vw;
+    padding: 2vw 2vw 2vw 1vw; /* 좌측 패딩을 데이터박스(1vw)와 일치 */
 }
 
 .overall-analysis-title {
@@ -805,16 +861,18 @@ main {
 .dataBox_wrap {
     width: 87vw;
     margin: .3vw auto 0 auto;
+    padding-left: 0.8vw; /* 데이터박스 좌측 정렬을 위한 패딩 */
     display: inline-flex;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 0.8vw; /* 데이터박스 간 간격 통일 */
 }
 
 .dataBox {
     width: 26vw;
     height: 12vw;
     padding: 1vw;
-    margin: .8vw 0 0 .8vw;
+    margin: .8vw 0 0 0; /* 좌측 마진 제거 (gap으로 대체) */
     background: var(--background);
     border: .09vw solid var(--purpleB);
     border-radius: 2vw;
@@ -1129,30 +1187,43 @@ main {
     width: 82vw;
     /* height: 12vw; */
     padding: 1.5vw 2vw; /* 패딩 조정 */
-    margin: .8vw 0 0 .8vw;
+    /* margin: .8vw 0 0 .8vw; */
+    margin-top: .8vw; /* 마진 통일 */
     background: #F9FAFC;
     border: .09vw solid var(--purpleB);
     border-radius: 2vw;
-    display: inline-flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: flex-start; /* 상단 정렬로 변경 */
+    display: flex;
+    flex-direction: column; /* 세로 정렬 */
+    /* flex-wrap: wrap; */
+    /* align-items: flex-start; */
+    gap: 1vw;
 }
 
 .aiSuggestion .star {
-    width: 1vw;
+    display: none; /* 별 아이콘 숨김 처리 (HTML 제거와 별개로 안전장치) */
 }
 
-.H2Text {
+/* .H2Text {
     font-size: var(--text-semi-medium);
     font-weight: 500;
     padding: .5vw .5vw .5vw 1vw;
+} */
+
+.aiSuggestion .H2Text {
+    /* margin-left: 1vw; */
+    margin: 0;
+    color: var(--purpleMain);
+    font-size: var(--text-medium);
+    font-weight: 700;
 }
 
 .aiDescribtion {
-    padding-top: .5vw;
-    font-size: var(--text-semi-small);
-    line-height: 1.3vw;
+    font-size: var(--text-small);
+    color: #555;
+    line-height: 1.6;
+    /* width: 70vw; */
+    /* margin-top: .5vw; */
+    /* margin-left: 1vw; */
 }
 
 
@@ -1213,7 +1284,7 @@ main {
     display: flex;
     align-self: flex-start;
     margin-left: 0;
-    max-width: 75%;
+    max-width: 85%; /* 75%에서 85%로 증가하여 더 넓은 공간 확보 */
     margin-right: auto;
     margin-bottom: 0.5vw;
 }
@@ -1230,6 +1301,9 @@ main {
     word-wrap: break-word;
     word-break: break-word;
     overflow-wrap: break-word;
+    overflow: visible; /* 오버플로우 허용하여 텍스트가 잘리지 않도록 */
+    min-height: auto; /* 최소 높이 제거 */
+    max-height: none; /* 최대 높이 제거 */
     transition: box-shadow 0.3s ease;
 }
 
@@ -1251,11 +1325,13 @@ main {
 
 .promptB_ai {
     font-size: var(--text-semi-small);
-    line-height: 1.5vw;
+    line-height: 1.6; /* 고정값 1.5vw 대신 상대값 사용하여 반응형 개선 */
     margin: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    min-height: auto; /* 최소 높이 제거 */
+    max-height: none; /* 최대 높이 제거 */
 }
 
 

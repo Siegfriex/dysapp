@@ -139,3 +139,4 @@ const model = client.preview.getGenerativeModel({
 *검증 완료: 2025-12-16*
 
 
+

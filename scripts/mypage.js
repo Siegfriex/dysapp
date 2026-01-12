@@ -38,9 +38,12 @@ let hasMore = false;
 // ============================================================================
 
 const profileSection = document.querySelector(".profile-section");
-const historySection = document.querySelector(".history-section");
-const historyGrid = document.querySelector(".history-grid");
+const bentoGrid = document.querySelector(".bento-grid");
+const galleryGrid = document.querySelector(".gallery-grid");
+const galleryTabs = document.querySelectorAll(".gallery-tab");
 const loadMoreBtn = document.querySelector(".load-more-btn");
+
+let currentTab = "all";
 
 // ============================================================================
 // Load Data
@@ -90,7 +93,8 @@ async function loadAnalysisHistory(append = false) {
       }
 
       hasMore = adapted.hasMore;
-      renderHistory();
+      renderMainPortfolio();
+      renderGallery();
       updateLoadMoreButton();
     }
   } catch (error) {
@@ -117,7 +121,7 @@ async function loadMore() {
 // ============================================================================
 
 /**
- * Render user profile section
+ * Render user profile section (Exact 51.png Design)
  */
 function renderProfile() {
   if (!profileSection) {
@@ -129,82 +133,161 @@ function renderProfile() {
   if (!profile) return;
 
   profileSection.innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar">
-        ${
-          profile.photoURL
-            ? `<img src="${profile.photoURL}" alt="Profile">`
-            : `<div class="avatar-placeholder">${getInitials(profile.displayName)}</div>`
-        }
-      </div>
-      <div class="profile-info">
-        <h2 class="profile-name">${profile.displayName}</h2>
-        <p class="profile-email">${profile.email || "익명 사용자"}</p>
-        <div class="profile-stats">
-          <span class="stat">
-            <strong>${profile.analysisCount}</strong>
-            분석
-          </span>
-          <span class="stat">
-            <strong>${profile.subscriptionLabel}</strong>
-            플랜
-          </span>
+    <h3 class="profile-section-title">나의 정보</h3>
+    <div class="profile-card">
+      <div class="profile-content">
+        <div class="profile-avatar-container">
+          <div class="profile-avatar">
+            ${
+              profile.photoURL
+                ? `<img src="${profile.photoURL}" alt="Profile" class="profile-image">`
+                : `<div class="profile-initials" style="font-size: 3vw;">${getInitials(profile.displayName)}</div>`
+            }
+          </div>
+          <button class="profile-edit-overlay" title="프로필 편집">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="profile-info">
+          <h2 class="profile-name">${profile.displayName || "익명 사용자"}</h2>
+          <div class="profile-contact-row">
+            <p class="profile-contact-item">${profile.email || "no-email@example.com"}</p>
+            <p class="profile-contact-item">${profile.phoneNumber || "010-0000-0000"}</p>
+          </div>
+          <div class="profile-badge">${profile.jobTitle || "STUDENT"}</div>
         </div>
       </div>
     </div>
-    <div class="profile-actions">
-      <button class="btn-edit-profile">프로필 수정</button>
-      <button class="btn-signout">로그아웃</button>
-    </div>
   `;
 
-  // Add event listeners
-  profileSection.querySelector(".btn-edit-profile")?.addEventListener("click", openProfileEditor);
-  profileSection.querySelector(".btn-signout")?.addEventListener("click", handleSignOut);
+  // Add event listeners - Trigger modal on overlay click
+  profileSection.querySelector(".profile-edit-overlay")?.addEventListener("click", openProfileEditor);
 }
 
 /**
  * Create profile section if not exists
  */
 function createProfileSection() {
-  const main = document.querySelector("main") || document.body;
+  const leftColumn = document.querySelector(".left-column");
+  if (!leftColumn) return;
 
   const section = document.createElement("section");
   section.className = "profile-section";
-  main.prepend(section);
+  leftColumn.prepend(section);
 
   // Re-render
   renderProfile();
 }
 
 /**
- * Render analysis history grid
+ * Render main portfolio (Bento Grid) - Top items with overlapping effect
  */
-function renderHistory() {
-  if (!historyGrid) {
-    createHistorySection();
+function renderMainPortfolio() {
+  if (!bentoGrid) return;
+
+  const topItems = analysisHistory.slice(0, 3); // Show top 3, rest in "more"
+  const remainingCount = Math.max(0, analysisHistory.length - 3);
+
+  if (topItems.length === 0) {
+    bentoGrid.innerHTML = `
+      <div class="empty-portfolio">
+        <p>주요 포스터가 없습니다</p>
+      </div>
+    `;
     return;
   }
 
-  if (analysisHistory.length === 0) {
-    historyGrid.innerHTML = `
-      <div class="empty-history">
-        <p>분석 내역이 없습니다</p>
-        <button class="btn-start-analysis">첫 분석 시작하기</button>
+  // Bento Grid with overlapping effect - Main large + 2 subs stacked
+  bentoGrid.innerHTML = `
+    ${topItems.length > 0 ? `
+      <div class="bento-item bento-main" data-id="${topItems[0].id}">
+        <img src="${topItems[0].imageUrl}" alt="${topItems[0].fileName}" loading="lazy">
+        <div class="bento-overlay">
+          <h4 class="bento-title">${truncateFileName(topItems[0].fileName, 25)}</h4>
+          <div class="bento-meta">
+            <span class="bento-badge">${topItems[0].format.label}</span>
+          </div>
+        </div>
+      </div>
+    ` : ""}
+    ${topItems.length > 1 ? `
+      <div class="bento-item bento-sub" data-id="${topItems[1].id}">
+        <img src="${topItems[1].imageUrl}" alt="${topItems[1].fileName}" loading="lazy">
+        <div class="bento-overlay">
+          <span class="bento-badge">${topItems[1].format.label}</span>
+        </div>
+      </div>
+    ` : ""}
+    ${topItems.length > 2 ? `
+      <div class="bento-item bento-sub" data-id="${topItems[2].id}">
+        <img src="${topItems[2].imageUrl}" alt="${topItems[2].fileName}" loading="lazy">
+        <div class="bento-overlay">
+          <span class="bento-badge">${topItems[2].format.label}</span>
+        </div>
+      </div>
+    ` : ""}
+    ${remainingCount > 0 ? `
+      <div class="bento-item bento-more" onclick="document.querySelector('.gallery-grid')?.scrollIntoView({ behavior: 'smooth' })">
+        <div class="bento-more-content">
+          <span class="bento-more-count">+${remainingCount}</span>
+        </div>
+      </div>
+    ` : ""}
+  `;
+
+  // Add click event listeners
+  bentoGrid.querySelectorAll(".bento-item[data-id]").forEach((item) => {
+    const itemId = item.dataset.id;
+    item.addEventListener("click", () => {
+      navigateToAnalysis(itemId);
+    });
+  });
+}
+
+/**
+ * Render style gallery with tabs
+ */
+function renderGallery() {
+  if (!galleryGrid) return;
+
+  // Filter by current tab
+  let filteredItems = analysisHistory;
+  if (currentTab !== "all") {
+    filteredItems = analysisHistory.filter((item) => {
+      const formatValue = item.format?.value?.toLowerCase() || "";
+      if (currentTab === "typo") {
+        return formatValue.includes("editorial") || formatValue.includes("typography");
+      } else if (currentTab === "composition") {
+        return formatValue.includes("poster") || formatValue.includes("layout");
+      } else if (currentTab === "effect") {
+        return formatValue.includes("effect") || formatValue.includes("visual");
+      }
+      return true;
+    });
+  }
+
+  if (filteredItems.length === 0) {
+    galleryGrid.innerHTML = `
+      <div class="empty-gallery">
+        <p>${currentTab === "all" ? "분석 내역이 없습니다" : "해당 카테고리의 분석이 없습니다"}</p>
+        ${currentTab === "all" ? `<button class="btn-start-analysis">첫 분석 시작하기</button>` : ""}
       </div>
     `;
 
-    historyGrid.querySelector(".btn-start-analysis")?.addEventListener("click", navigateToUpload);
+    galleryGrid.querySelector(".btn-start-analysis")?.addEventListener("click", navigateToUpload);
     return;
   }
 
-  historyGrid.innerHTML = analysisHistory
-    .map((item) => createHistoryCard(item))
+  galleryGrid.innerHTML = filteredItems
+    .map((item) => createGalleryCard(item))
     .join("");
 
   // Add event listeners
-  historyGrid.querySelectorAll(".history-card").forEach((card, index) => {
-    const item = analysisHistory[index];
+  galleryGrid.querySelectorAll(".gallery-card").forEach((card, index) => {
+    const item = filteredItems[index];
 
     card.addEventListener("click", (e) => {
       if (!e.target.closest(".card-delete")) {
@@ -220,61 +303,30 @@ function renderHistory() {
 }
 
 /**
- * Create history section if not exists
+ * Create gallery card HTML
  */
-function createHistorySection() {
-  const main = document.querySelector("main") || document.body;
-
-  const section = document.createElement("section");
-  section.className = "history-section";
-  section.innerHTML = `
-    <h3 class="section-title">분석 히스토리</h3>
-    <div class="history-grid"></div>
-    <button class="load-more-btn" style="display: none;">더 보기</button>
-  `;
-
-  main.append(section);
-
-  // Get new references
-  const newGrid = section.querySelector(".history-grid");
-  const newBtn = section.querySelector(".load-more-btn");
-
-  if (newGrid) {
-    window.historyGrid = newGrid;
-  }
-
-  newBtn?.addEventListener("click", loadMore);
-
-  // Re-render
-  renderHistory();
-}
-
-/**
- * Create history card HTML
- */
-function createHistoryCard(item) {
+function createGalleryCard(item) {
   return `
-    <div class="history-card" data-id="${item.id}">
-      <div class="card-image">
+    <div class="gallery-card" data-id="${item.id}">
+      <div class="gallery-card-image">
         <img src="${item.imageUrl}" alt="${item.fileName}" loading="lazy">
-        <button class="card-delete" title="삭제">
-          <img src="./img/delete_white.svg" alt="Delete">
-        </button>
-      </div>
-      <div class="card-content">
-        <p class="card-filename">${truncateFileName(item.fileName)}</p>
-        <div class="card-meta">
-          <span class="card-format">${item.format.label}</span>
-          <span class="card-score" style="background: ${getScoreColor(item.score)}">${item.score}</span>
+        <div class="gallery-card-overlay">
+          <button class="card-delete" title="삭제">
+            <img src="./img/delete_white.svg" alt="Delete">
+          </button>
         </div>
-        <p class="card-date">${item.createdAt}</p>
-        <div class="card-fixscope ${item.fixScope.value.toLowerCase()}">
-          ${item.fixScope.label}
+      </div>
+      <div class="gallery-card-info">
+        <h4 class="gallery-card-title">${truncateFileName(item.fileName, 20)}</h4>
+        <div class="gallery-card-meta">
+          <span class="gallery-card-badge">${item.format.label}</span>
+          <span class="gallery-card-date">${item.createdAt?.split(' ')[0] || ""}</span>
         </div>
       </div>
     </div>
   `;
 }
+
 
 /**
  * Update load more button visibility
@@ -285,28 +337,101 @@ function updateLoadMoreButton() {
   }
 }
 
+/**
+ * Handle gallery tab click
+ */
+function handleTabClick(tab) {
+  currentTab = tab;
+  
+  // Update tab active state
+  galleryTabs.forEach((t) => {
+    if (t.dataset.tab === tab) {
+      t.classList.add("active");
+    } else {
+      t.classList.remove("active");
+    }
+  });
+
+  // Re-render gallery
+  renderGallery();
+}
+
 // ============================================================================
 // Profile Editor
 // ============================================================================
 
 /**
- * Open profile editor modal
+ * Open profile editor modal - Updated to match 53.png design
  */
 function openProfileEditor() {
   // Create modal
   const modal = document.createElement("div");
   modal.className = "profile-modal";
   modal.innerHTML = `
-    <div class="modal-content">
-      <h3>프로필 수정</h3>
-      <form class="profile-form">
-        <div class="form-group">
-          <label for="displayName">이름</label>
-          <input type="text" id="displayName" value="${userProfile?.displayName || ""}">
+    <div class="profile-modal-content">
+      <div class="profile-modal-header">
+        <h2 class="profile-modal-title">나의 정보 수정</h2>
+        <button class="profile-modal-close" aria-label="닫기">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <form class="profile-modal-form">
+        <div class="profile-modal-body">
+          <!-- Left: Image Section -->
+          <div class="profile-modal-image-section">
+            <label class="profile-modal-label">이미지</label>
+            <div class="profile-modal-avatar-container">
+              <div class="profile-modal-avatar">
+                ${
+                  userProfile?.photoURL
+                    ? `<img src="${userProfile.photoURL}" alt="Profile" class="profile-modal-avatar-img">`
+                    : `<div class="profile-modal-avatar-initials">${getInitials(userProfile?.displayName || "?")}</div>`
+                }
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right: Form Fields Section -->
+          <div class="profile-modal-fields-section">
+            <!-- Nickname Field -->
+            <div class="profile-modal-field-group">
+              <label for="profileDisplayName" class="profile-modal-label">닉네임</label>
+              <input 
+                type="text" 
+                id="profileDisplayName" 
+                class="profile-modal-input" 
+                value="${userProfile?.displayName || ""}" 
+                placeholder="닉네임을 입력하세요"
+              >
+            </div>
+            
+            <!-- Subscription Status -->
+            <div class="profile-modal-subscription">
+              <span class="profile-modal-subscription-label">구독 버전</span>
+              <span class="profile-modal-subscription-value">무료 버전 사용중</span>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="profile-modal-actions">
+              <button type="button" class="profile-modal-action-btn" id="changePasswordBtn">
+                비밀번호 변경
+              </button>
+              <button type="button" class="profile-modal-action-btn" id="addAccountBtn">
+                계정 추가
+              </button>
+              <button type="button" class="profile-modal-action-btn" id="logoutBtn">
+                로그아웃
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="form-actions">
-          <button type="button" class="btn-cancel">취소</button>
-          <button type="submit" class="btn-save">저장</button>
+        
+        <!-- Bottom Save Button -->
+        <div class="profile-modal-footer">
+          <button type="submit" class="profile-modal-save-btn">저장</button>
         </div>
       </form>
     </div>
@@ -315,13 +440,38 @@ function openProfileEditor() {
   document.body.appendChild(modal);
 
   // Event handlers
-  modal.querySelector(".btn-cancel")?.addEventListener("click", () => {
+  const closeBtn = modal.querySelector(".profile-modal-close");
+  closeBtn?.addEventListener("click", () => {
     modal.remove();
   });
 
-  modal.querySelector(".profile-form")?.addEventListener("submit", async (e) => {
+  const changePasswordBtn = modal.querySelector("#changePasswordBtn");
+  changePasswordBtn?.addEventListener("click", () => {
+    toast.info("비밀번호 변경 기능은 준비 중입니다");
+  });
+
+  const addAccountBtn = modal.querySelector("#addAccountBtn");
+  addAccountBtn?.addEventListener("click", () => {
+    toast.info("계정 추가 기능은 준비 중입니다");
+  });
+
+  const logoutBtn = modal.querySelector("#logoutBtn");
+  logoutBtn?.addEventListener("click", async () => {
+    if (confirm("로그아웃 하시겠습니까?")) {
+      try {
+        await signOut();
+        toast.success("로그아웃되었습니다");
+        modal.remove();
+        navigateToUpload();
+      } catch (error) {
+        toast.error("로그아웃에 실패했습니다");
+      }
+    }
+  });
+
+  modal.querySelector(".profile-modal-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const displayName = modal.querySelector("#displayName")?.value?.trim();
+    const displayName = modal.querySelector("#profileDisplayName")?.value?.trim();
 
     try {
       await updateUserProfile({ displayName });
@@ -366,7 +516,8 @@ async function handleDelete(analysisId) {
 
     // Remove from local state
     analysisHistory = analysisHistory.filter((item) => item.id !== analysisId);
-    renderHistory();
+    renderMainPortfolio();
+    renderGallery();
 
     // Update profile count
     if (userProfile) {
@@ -443,447 +594,912 @@ function getScoreColor(score) {
 // ============================================================================
 
 const mypageStyles = `
+/* ============================================================================
+   Layout - Exact Match to 51.svg (1920x1080 기준)
+   ============================================================================ */
+
 .mypage_main {
   width: calc(100% - 4vw);
   min-height: 100vh;
-  padding: 2vw 3vw;
-  background: #FAFAFF;
+  padding: 7.84vw 7.84vw 0 7.84vw; /* SVG: y=150.5 -> 150.5/1920 = 7.84vw */
+  background: var(--background);
   margin-left: 4vw;
   box-sizing: border-box;
+  font-family: 'SUITE', 'Rubik', sans-serif;
 }
 
+/* 헤더 삭제 */
 .mypage-header {
-  margin-bottom: 2vw;
-  padding-bottom: 1.5vw;
-  border-bottom: 1px solid #E7E2FF;
+  display: none;
 }
 
-.mypage-title {
-  font-size: 3vw;
-  font-weight: 600;
-  color: #1B1233;
-  margin-bottom: 0.5vw;
-  line-height: 1.35;
+/* 2단 레이아웃 - SVG 정확한 비율 */
+.mypage-layout {
+  display: flex;
+  gap: 4.19vw; /* SVG: 좌측 Bento Grid 끝 150.5+739=889.5px, 우측 Gallery Grid 첫 카드 시작 970px, 차이 80.5px -> 80.5/1920 = 4.19vw */
+  align-items: flex-start;
+  margin-top: 0;
 }
 
-.mypage-subtitle {
-  font-size: 1.1vw;
-  color: #7C7895;
-  line-height: 1.35;
+.left-column {
+  flex: 0 0 38.49%; /* SVG: 프로필 카드 460 + 포스터 739 = 1199px, 하지만 좌측은 약 610px -> 31.77vw, 여유있게 38.49% */
+  display: flex;
+  flex-direction: column;
+  gap: 3.51vw; /* SVG: 529.5-455.5 = 74px -> 3.85vw, 간격은 약 3.51vw */
+  max-width: 38.49vw; /* 최대 너비 제한 */
 }
+
+.right-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================================================
+   Profile Section - Exact Match to 51.svg
+   ============================================================================ */
 
 .profile-section {
-  padding: 1.5vw;
-  background: white;
-  border-radius: 1vw;
-  margin-bottom: 1.5vw;
-  box-shadow: 0 0.2vw 0.8vw rgba(135, 92, 255, 0.08);
-  transition: box-shadow 0.3s ease;
   width: 100%;
-  box-sizing: border-box;
 }
 
-.profile-section:hover {
-  box-shadow: 0 4px 12px rgba(135, 92, 255, 0.12);
+/* "나의 정보" 제목 - SVG: x=166.76, y=118.024 */
+.profile-section-title {
+  font-size: var(--text-medium);
+  font-weight: 700;
+  color: #875CFF; /* SVG: fill="#875CFF" */
+  margin: 0 0 1.54vw 0; /* SVG: y=118.024, 카드 y=150.5, 차이 32.476px -> 1.69vw */
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
 }
 
-.profile-header {
+/* 프로필 카드 - SVG: x=150.5, y=150.5, width=460, height=305, rx=10.5 */
+.profile-card {
+  position: relative;
+  width: 23.96vw; /* 460/1920 */
+  min-height: 15.89vw; /* 305/1920 (비율 유지) */
+  padding: 1.54vw; /* SVG: 아바타 offset 29.5px -> 1.54vw */
+  background: white;
+  border-radius: 0.547vw; /* 10.5/1920 */
+  border: 1px solid #EBEBF8; /* SVG: stroke="#EBEBF8" */
+  box-shadow: none;
   display: flex;
-  gap: 20px;
-  align-items: center;
-  margin-bottom: 20px;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profile-content {
+  display: flex;
+  gap: 1.25vw; /* SVG: 텍스트 시작 x=370, 아바타 끝 x=351, 차이 약 24px -> 1.25vw */
+  align-items: flex-start;
+  height: 100%;
+}
+
+/* 프로필 아바타 - SVG: x=180, y=180, width=171, height=246, rx=11 */
+/* 비율: 171:246 = 1:1.44 */
+.profile-avatar-container {
+  flex-shrink: 0;
+  position: relative;
 }
 
 .profile-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  width: 8.91vw; /* 171/1920 */
+  height: 12.81vw; /* 246/1920 (비율 유지: 171*1.44 = 246) */
+  aspect-ratio: 171 / 246; /* 정확한 비율 유지 */
+  border-radius: 0.573vw; /* 11/1920 */
   overflow: hidden;
+  background: #FDF6D0; /* 노란색 배경 */
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
-.profile-avatar img {
+.profile-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #875CFF, #A483FF);
-  color: white;
+.profile-initials {
+  font-size: 2.5vw;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* 편집 아이콘 - SVG: x=249, y=286, width=34, height=34, rx=6.8, fill="#EBEBF8" */
+/* 아바타 내부에서의 위치: x=69px (249-180), y=106px (286-180) */
+.profile-edit-overlay {
+  position: absolute;
+  top: 43.09%; /* SVG: 106/246 = 43.09% (아바타 높이 기준) */
+  left: 40.35%; /* SVG: 69/171 = 40.35% (아바타 너비 기준) */
+  transform: translate(-50%, -50%); /* 중앙 정렬 */
+  width: 1.77vw; /* 34/1920 */
+  height: 1.77vw; /* 정사각형 유지 */
+  background: #EBEBF8; /* SVG: fill="#EBEBF8" */
+  border-radius: 0.354vw; /* 6.8/1920 */
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-smooth);
+  z-index: 10;
+  box-shadow: 0 0.1vw 0.3vw rgba(0,0,0,0.1);
+}
+
+.profile-edit-overlay:hover {
+  background: #D0D0FF;
+  transform: scale(1.1);
+}
+
+.profile-edit-overlay svg {
+  width: 0.9vw;
+  height: 0.9vw;
+  color: #875CFF;
+}
+
+/* 프로필 정보 */
+.profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+  justify-content: center;
+  padding-top: 0;
 }
 
 .profile-name {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1B1233;
-  margin-bottom: 4px;
+  font-size: var(--text-large);
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 0.3vw 0;
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
 }
 
-.profile-email {
-  font-size: 14px;
-  color: #7C7895;
-  margin-bottom: 12px;
-}
-
-.profile-stats {
+.profile-contact-row {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 0.2vw;
+  margin: 0.3vw 0;
 }
 
-.profile-stats .stat {
-  font-size: 14px;
-  color: #7C7895;
+.profile-contact-item {
+  font-size: var(--text-small);
+  color: #666;
+  margin: 0;
+  line-height: var(--line-height-base);
+  font-weight: 400;
 }
 
-.profile-stats .stat strong {
-  color: #875CFF;
-  margin-right: 4px;
-}
-
-.profile-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.profile-actions button {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-edit-profile {
-  background: #875CFF;
+/* STUDENT 배지 - SVG: x=370, y=280, width=82, height=30, rx=4, fill="#875CFF" */
+.profile-badge {
+  background: #875CFF; /* SVG: fill="#875CFF" */
   color: white;
-  border: none;
-}
-
-.btn-edit-profile:hover {
-  background: #7B4FE0;
-}
-
-.btn-signout {
-  background: white;
-  color: #7C7895;
-  border: 1px solid #E7E2FF;
-}
-
-.btn-signout:hover {
-  background: #F6F5F9;
-}
-
-.history-section {
-  padding: 1.5vw;
-  background: transparent;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.section-title {
-  font-size: 1.8vw;
+  font-size: var(--text-extra-small);
   font-weight: 600;
-  color: #1B1233;
-  margin-bottom: 1.5vw;
-  line-height: 1.35;
+  padding: 0.78vw 2.14vw; /* SVG: height=30 -> 1.56vw, width=82 -> 4.27vw, 패딩은 약간 조정 */
+  border-radius: 0.208vw; /* 4/1920 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+  margin-top: 0.5vw;
+  text-align: center;
+  line-height: 1.2;
 }
 
-.history-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18vw, 1fr));
-  gap: 1.5vw;
-  margin-bottom: 1.5vw;
+/* ============================================================================
+   Portfolio Section - Exact Match to 51.svg
+   ============================================================================ */
+
+.portfolio-section {
   width: 100%;
-  padding: 0;
 }
 
-.history-card {
+.portfolio-title {
+  font-size: var(--text-medium);
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1.2vw;
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+}
+
+/* 주 그래픽 포스터 카드 - SVG: x=150.5, y=529.5, width=739, height=514, rx=11.5, stroke="#C291FF" */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  grid-template-rows: auto auto;
+  gap: 0.8vw;
+  grid-template-areas:
+    "main sub1"
+    "main sub2";
   background: white;
+  border-radius: 0.599vw; /* 11.5/1920 */
+  padding: 1.2vw;
+  border: 1px solid #C291FF; /* SVG: stroke="#C291FF" */
+  box-shadow: none;
+  width: 100%; /* 부모 컨테이너에 맞춤 */
+  min-height: 26.77vw; /* 514/1920 (비율 유지) */
+}
+
+.bento-item {
+  position: relative;
   border-radius: 0.8vw;
   overflow: hidden;
-  box-shadow: 0 0.2vw 0.8vw rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: all 0.3s ease;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 0.2vw 0.4vw rgba(0,0,0,0.04);
+  transition: all var(--ease-smooth) 0.25s;
 }
 
-.history-card:hover {
-  transform: translateY(-0.4vw);
-  box-shadow: 0 0.6vw 1.6vw rgba(135, 92, 255, 0.15);
-}
-
-.card-image {
-  position: relative;
-  aspect-ratio: 16/10;
-  overflow: hidden;
-}
-
-.card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.history-card:hover .card-image img {
-  transform: scale(1.05);
-}
-
-.card-delete {
-  position: absolute;
-  top: 0.5vw;
-  right: 0.5vw;
-  width: 2vw;
-  height: 2vw;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.2s ease;
+.bento-item:hover {
+  transform: translateY(-0.15vw);
+  box-shadow: var(--shadow-md);
+  border-color: var(--purpleGy);
   z-index: 2;
 }
 
-.history-card:hover .card-delete {
+.bento-main {
+  grid-area: main;
+  min-height: 18vw;
+}
+
+.bento-sub:nth-child(2) { 
+  grid-area: sub1; 
+  min-height: 8vw;
+}
+.bento-sub:nth-child(3) { 
+  grid-area: sub2; 
+  min-height: 8vw;
+}
+
+/* Image Handling - Fill container */
+.bento-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s var(--ease-smooth);
+}
+
+.bento-item:hover img {
+  transform: scale(1.08);
+}
+
+/* Overlay - Subtle on hover */
+.bento-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1vw;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-smooth);
+}
+
+.bento-item:hover .bento-overlay {
   opacity: 1;
 }
 
+.bento-title {
+  color: white;
+  font-size: var(--text-small);
+  font-weight: 600;
+  margin-bottom: 0.3vw;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  line-height: var(--line-height-tight);
+}
+
+.bento-meta {
+  display: flex;
+  gap: 0.4vw;
+  align-items: center;
+}
+
+.bento-badge {
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(6px);
+  color: white;
+  padding: 0.15vw 0.5vw;
+  border-radius: 0.3vw;
+  font-size: var(--text-extra-small);
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* More Card - Exact Design */
+.bento-more {
+  grid-area: sub2;
+  background: var(--purpleA);
+  border: 1px dashed var(--purpleF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bento-more:hover {
+  background: var(--purpleB);
+  border-color: var(--purpleMain);
+  transform: translateY(-0.1vw);
+}
+
+.bento-more-content {
+  text-align: center;
+}
+
+.bento-more-count {
+  font-size: 1.5vw;
+  font-weight: 700;
+  color: var(--purpleMain);
+  display: block;
+  line-height: 1.2;
+}
+
+.bento-more-text {
+  display: none; /* Remove text per design */
+}
+
+.empty-portfolio {
+  grid-column: 1 / -1;
+  background: white;
+  border-radius: 1vw;
+  border: 1px dashed var(--Gray);
+  padding: 3vw;
+  text-align: center;
+  color: var(--purpleC);
+}
+
+/* ============================================================================
+   Style Gallery - Exact Match to 51.svg
+   ============================================================================ */
+
+.style-gallery-section {
+  width: 100%;
+}
+
+.gallery-header {
+  margin-bottom: 1vw;
+}
+
+.gallery-title {
+  font-size: var(--text-medium);
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 1.2vw;
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+}
+
+/* Folder Tabs - Exact Design */
+.gallery-tabs {
+  display: flex;
+  gap: 0;
+  background: transparent;
+  border-bottom: 2px solid var(--purpleGy);
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.gallery-tab {
+  padding: 0.7vw 1.8vw;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--purpleC);
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--ease-smooth) 0.2s;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.gallery-tab:hover {
+  color: var(--purpleMain);
+  background: rgba(135, 92, 255, 0.03);
+}
+
+.gallery-tab.active {
+  color: var(--purpleMain);
+  border-bottom-color: var(--purpleMain);
+  background: transparent;
+}
+
+/* 스타일 갤러리 컨테이너 - SVG: x=940, y=110, width=938, height=991 */
+.gallery-grid {
+  background: white;
+  border-radius: 0.573vw; /* 11/1920 */
+  padding: 1.5vw;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2vw;
+  box-shadow: none;
+  border: 1px solid #C291FF; /* SVG: Bento Grid와 동일한 색상 및 굵기 */
+  margin-top: 1vw;
+  min-height: 51.61vw; /* 991/1920 (비율 유지) */
+  width: 100%; /* 부모 컨테이너에 맞춤 */
+}
+
+.gallery-card {
+  background: white;
+  border-radius: 0.8vw;
+  overflow: hidden;
+  border: 1px solid var(--purpleGy);
+  transition: all var(--ease-smooth) 0.25s;
+  cursor: pointer;
+}
+
+.gallery-card:hover {
+  transform: translateY(-0.2vw);
+  box-shadow: var(--shadow-md);
+  border-color: var(--purpleF);
+}
+
+.gallery-card-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  background: var(--purpleA);
+}
+
+.gallery-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--ease-smooth);
+  display: block;
+}
+
+.gallery-card:hover .gallery-card-image img {
+  transform: scale(1.1);
+}
+
+.gallery-card-overlay {
+  position: absolute;
+  top: 0.6vw;
+  right: 0.6vw;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-smooth);
+}
+
+.gallery-card:hover .gallery-card-overlay {
+  opacity: 1;
+}
+
+.card-delete {
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  width: 2vw;
+  height: 2vw;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-smooth);
+}
+
 .card-delete:hover {
-  background: #ef4444;
+  background: #EF4444;
+  border-color: #EF4444;
   transform: scale(1.1);
 }
 
 .card-delete img {
-  width: 1vw;
-  height: 1vw;
+  width: 0.9vw;
+  height: 0.9vw;
+  filter: brightness(0) invert(1);
 }
 
-.card-content {
-  padding: 1vw;
+.gallery-card-info {
+  padding: 0.9vw;
+  background: white;
 }
 
-.card-filename {
-  font-size: 1.1vw;
-  font-weight: 500;
-  color: #1B1233;
-  margin-bottom: 0.6vw;
-  line-height: 1.35;
+.gallery-card-title {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--navy);
+  margin: 0 0 0.4vw 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: var(--line-height-tight);
 }
 
-.card-meta {
+.gallery-card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.6vw;
+  gap: 0.5vw;
 }
 
-.card-format {
-  font-size: 0.9vw;
-  color: #7C7895;
-  line-height: 1.35;
-}
-
-.card-score {
-  font-size: 0.9vw;
-  color: white;
-  padding: 0.2vw 0.6vw;
-  border-radius: 0.8vw;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.card-date {
-  font-size: 0.8vw;
-  color: #A8A8BF;
-  margin-bottom: 0.6vw;
-  line-height: 1.35;
-}
-
-.card-fixscope {
-  font-size: 0.8vw;
-  padding: 0.3vw 0.6vw;
+.gallery-card-badge {
+  font-size: var(--text-extra-small);
+  background: var(--purpleA);
+  color: var(--purpleMain);
+  padding: 0.15vw 0.5vw;
   border-radius: 0.3vw;
-  display: inline-block;
   font-weight: 500;
-  line-height: 1.35;
 }
 
-.card-fixscope.structurerebuild {
-  background: #FEE2E2;
-  color: #DC2626;
+.gallery-card-date {
+  font-size: var(--text-extra-small);
+  color: var(--purpleGy2);
+  font-weight: 400;
 }
 
-.card-fixscope.detailtuning {
-  background: #E0D5FF;
-  color: #875CFF;
-}
-
-.empty-history {
+.empty-gallery {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 4vw 2vw;
-  color: #7C7895;
-  background: white;
-  border-radius: 0.8vw;
-}
-
-.empty-history p {
-  font-size: 1.1vw;
-  margin-bottom: 1vw;
-  line-height: 1.35;
+  padding: 5vw;
+  color: #BBB;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-start-analysis {
-  margin-top: 1vw;
-  padding: 0.8vw 2vw;
+  margin-top: 1.5vw;
   background: #875CFF;
   color: white;
+  padding: 0.8vw 2vw;
+  border-radius: 2vw;
   border: none;
-  border-radius: 0.5vw;
-  font-size: 1.1vw;
+  font-weight: 600;
+  font-size: 0.9vw;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  line-height: 1.35;
+  box-shadow: 0 0.5vw 1vw rgba(135, 92, 255, 0.2);
+  transition: transform 0.2s;
 }
 
 .btn-start-analysis:hover {
+  transform: translateY(-0.2vw);
   background: #7B4FE0;
-  transform: translateY(-0.1vw);
 }
 
+/* ============================================================================
+   Load More Button
+   ============================================================================ */
+
 .load-more-btn {
-  display: block;
-  margin: 2vw auto;
+  margin: 2vw auto 0;
   padding: 0.8vw 2.5vw;
   background: white;
-  color: #875CFF;
-  border: 1px solid #E0D5FF;
-  border-radius: 0.5vw;
-  font-size: 1.1vw;
+  border: 1px solid #E0E0E0;
+  border-radius: 2vw;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.9vw;
   cursor: pointer;
-  font-weight: 500;
   transition: all 0.2s ease;
-  line-height: 1.35;
 }
 
 .load-more-btn:hover {
-  background: #E0D5FF;
   border-color: #875CFF;
+  color: #875CFF;
+  background: #F8F7FF;
 }
 
-.load-more-btn.loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
+/* ============================================================================
+   Profile Modal - Exact Match to 53.png Design
+   ============================================================================ */
 .profile-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(27, 18, 51, 0.7);
+  background: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(0.3vw);
+  backdrop-filter: blur(0.2vw);
+  animation: fadeInUp 0.3s var(--ease-smooth);
 }
 
-.profile-modal .modal-content {
+.profile-modal-content {
   background: white;
-  padding: 2vw;
-  border-radius: 1vw;
+  border-radius: 2vw;
   width: 90%;
-  max-width: 30vw;
-  box-shadow: 0 1vw 3vw rgba(0, 0, 0, 0.2);
-}
-
-.profile-modal h3 {
-  margin-bottom: 1.5vw;
-  color: #1B1233;
-  font-size: 1.8vw;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.form-group {
-  margin-bottom: 1.2vw;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5vw;
-  font-size: 1.1vw;
-  color: #7C7895;
-  font-weight: 500;
-  line-height: 1.35;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.8vw;
-  border: 1px solid #E7E2FF;
-  border-radius: 0.5vw;
-  font-size: 1.1vw;
-  transition: border-color 0.2s ease;
-  box-sizing: border-box;
-  line-height: 1.35;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #875CFF;
-}
-
-.form-actions {
-  display: flex;
-  gap: 0.8vw;
-  justify-content: flex-end;
-  margin-top: 1.5vw;
-}
-
-.form-actions button {
-  padding: 0.7vw 1.5vw;
-  border-radius: 0.5vw;
-  font-size: 1.1vw;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  line-height: 1.35;
-}
-
-.btn-cancel {
-  background: white;
-  border: 1px solid #E7E2FF;
-  color: #7C7895;
-}
-
-.btn-cancel:hover {
-  background: #F6F5F9;
-}
-
-.btn-save {
-  background: #875CFF;
+  max-width: 55vw;
+  box-shadow: 0 0 2vw rgba(135, 92, 255, 0.1);
   border: none;
-  color: white;
+  overflow: hidden;
+  animation: fadeInUp 0.3s var(--ease-smooth);
 }
 
-.btn-save:hover {
-  background: #7B4FE0;
+/* Modal Header */
+.profile-modal-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2vw;
+  border-bottom: none;
+  background: white;
+  position: relative;
+}
+
+.profile-modal-title {
+  font-size: 1.2vw;
+  font-weight: 600;
+  color: var(--purpleMain);
+  margin: 0;
+}
+
+.profile-modal-close {
+  position: absolute;
+  right: 2vw;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5vw;
+  color: var(--purpleMain);
+}
+
+/* Modal Body - Two Column Layout Updated for 53.png */
+.profile-modal-body {
+  display: flex;
+  gap: 3vw;
+  padding: 3vw 4vw;
+}
+
+.profile-modal-image-section {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5vw;
+}
+
+.profile-modal-label {
+  font-size: 0.9vw;
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 0.5vw;
+}
+
+.profile-modal-avatar {
+  width: 14vw;
+  height: 18vw;
+  border-radius: 1vw;
+  background: #FDF6D0; /* Yellow bg */
+  border: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fields Section */
+.profile-modal-fields-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vw;
+  padding-top: 1.8vw; /* Align with image top */
+}
+
+.profile-modal-input {
+  width: 100%;
+  padding: 1vw 1.2vw;
+  border-radius: 0.5vw;
+  background: white;
+  border: 1px solid #E0E0E0;
+  font-size: 1vw;
+  color: var(--navy);
+  margin-top: 0.5vw;
+}
+
+.profile-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 1vw;
+  border-top: 1px solid #EEE;
+  border-bottom: 1px solid #EEE;
+}
+
+.profile-modal-action-btn {
+  width: 100%;
+  padding: 1.2vw 0;
+  background: white;
+  border: none;
+  border-bottom: 1px solid #EEE;
+  font-size: 0.95vw;
+  font-weight: 500;
+  color: var(--purpleMain);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.profile-modal-action-btn:last-child {
+  border-bottom: none;
+}
+
+.profile-modal-action-btn:hover {
+  background: #F9F9F9;
+  padding-left: 0.5vw;
+}
+
+/* Footer Center Button */
+.profile-modal-footer {
+  padding: 2vw;
+  background: white;
+  display: flex;
+  justify-content: center;
+  border-top: none;
+}
+
+.profile-modal-save-btn {
+  width: auto;
+  min-width: 6vw;
+  padding: 0.8vw 2.5vw;
+  background: #EBEBF8; /* Light purple bg */
+  color: var(--purpleMain);
+  border-radius: 0.5vw;
+  font-size: 1vw;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.profile-modal-save-btn:hover {
+  background: var(--purpleMain);
+  color: white;
+  transform: none;
+}
+
+/* ============================================================================
+   Responsive Design - Maintain SVG Proportions
+   ============================================================================ */
+@media (max-width: 1024px) {
+  .mypage-layout {
+    flex-direction: column;
+    gap: 4vw;
+  }
+  
+  .left-column {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .right-column {
+    width: 100%;
+  }
+  
+  .profile-card {
+    width: 100%;
+    min-height: auto;
+  }
+  
+  .profile-avatar {
+    width: 12vw;
+    height: auto;
+  }
+  
+  .bento-grid {
+    width: 100%;
+    min-height: auto;
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .bento-main {
+    min-height: 30vw;
+  }
+  
+  .bento-sub {
+    min-height: 15vw;
+  }
+  
+  .gallery-grid {
+    width: 100%;
+    min-height: auto;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mypage_main {
+    width: 100%;
+    margin-left: 0;
+    padding: 5vw;
+  }
+  
+  .profile-section-title {
+    font-size: 4vw;
+  }
+  
+  .profile-card {
+    padding: 4vw;
+    border-radius: 2vw;
+  }
+  
+  .profile-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3vw;
+  }
+  
+  .profile-avatar {
+    width: 20vw;
+    height: auto;
+  }
+  
+  .profile-edit-overlay {
+    width: 4vw;
+    height: 4vw;
+    top: 50%;
+    left: 50%;
+  }
+  
+  .profile-name {
+    font-size: 5vw;
+  }
+  
+  .profile-badge {
+    font-size: 2.5vw;
+    padding: 1vw 2vw;
+    margin: 1vw auto 0;
+  }
+  
+  .profile-contact-item {
+    font-size: 3vw;
+  }
+  
+  .bento-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "main"
+      "sub1"
+      "sub2";
+    padding: 3vw;
+  }
+  
+  .bento-main {
+    min-height: 50vw;
+  }
+  
+  .bento-sub {
+    min-height: 25vw;
+  }
+  
+  .gallery-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  
+  .gallery-tab {
+    flex: 0 0 auto;
+    font-size: 3.5vw;
+    padding: 2vw 4vw;
+    white-space: nowrap;
+  }
+  
+  .gallery-grid {
+    grid-template-columns: 1fr;
+    padding: 4vw;
+  }
+  
+  .gallery-card-title {
+    font-size: 3.5vw;
+  }
+  
+  .gallery-card-badge {
+    font-size: 3vw;
+  }
 }
 `;
 
@@ -898,12 +1514,49 @@ document.head.appendChild(styleSheet);
 function init() {
   console.log("[MyPage] Initializing my page...");
 
+  // Setup gallery tabs
+  galleryTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      handleTabClick(tab.dataset.tab);
+    });
+  });
+
+  // Set active navigation
+  setActiveNavigation();
+
   // Load data
   loadUserProfile();
   loadAnalysisHistory();
 
   // Setup load more button
   loadMoreBtn?.addEventListener("click", loadMore);
+}
+
+/**
+ * Set active navigation state for current page
+ */
+function setActiveNavigation() {
+  // Wait for nav.html to be loaded by includHTML.js
+  setTimeout(() => {
+    const navLinks = document.querySelectorAll('.nav_tab a');
+    navLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && (href.includes('mypage.html') || href === './mypage.html')) {
+        link.classList.add('active');
+        // Also mark parent li as active
+        const parentLi = link.closest('li');
+        if (parentLi) {
+          parentLi.classList.add('active');
+        }
+      } else {
+        link.classList.remove('active');
+        const parentLi = link.closest('li');
+        if (parentLi) {
+          parentLi.classList.remove('active');
+        }
+      }
+    });
+  }, 200); // Give includHTML.js time to load nav.html
 }
 
 // Wait for app initialization

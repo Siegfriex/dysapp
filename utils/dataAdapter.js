@@ -444,6 +444,8 @@ export function adaptUserProfile(apiResponse) {
     email: profile.email || "",
     displayName: profile.displayName || "익명 사용자",
     photoURL: profile.photoURL || null,
+    phoneNumber: profile.phoneNumber || "",
+    jobTitle: profile.jobTitle || "STUDENT",
     subscriptionTier: profile.subscriptionTier || "free",
     subscriptionLabel: getSubscriptionLabel(profile.subscriptionTier),
     analysisCount: profile.analysisCount || 0,

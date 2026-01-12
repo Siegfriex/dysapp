@@ -17,8 +17,8 @@ export const CHAT_MODEL = "gemini-2.5-flash";
 /** Embedding model for vector search */
 export const EMBEDDING_MODEL = "multimodalembedding@001";
 
-/** Embedding vector dimension */
-export const EMBEDDING_DIM = 512;
+/** Embedding vector dimension (multimodalembedding@001 = 1408) */
+export const EMBEDDING_DIM = 1408;
 
 // ============================================================================
 // Version Management
@@ -46,7 +46,7 @@ export const VISION_CONFIG = {
 export const CHAT_CONFIG = {
   temperature: 0.7,
   topP: 0.9,
-  maxOutputTokens: 2048,
+  maxOutputTokens: 8192, // Increased from 4096 to 8192 to prevent truncation
 };
 
 // ============================================================================
@@ -134,7 +134,7 @@ export const MEMORY = {
   ANALYZE_DESIGN: "512MiB",
   CHAT_WITH_MENTOR: "256MiB",
   SEARCH_SIMILAR: "256MiB",
-  DEFAULT: "256MiB",
+  DEFAULT: "512MiB",
 } as const;
 
 // ============================================================================

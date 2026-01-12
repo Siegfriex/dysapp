@@ -74,11 +74,18 @@ async function uploadToStorage(
     },
   });
 
-  // Generate public URL (Storage rules now allow all access in test mode)
-  // Format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{path}?alt=media
-  const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${STORAGE_BUCKET}/o/${encodeURIComponent(filePath)}?alt=media`;
+  // Generate signed URL for secure access
+  // Storage rules require authentication, so we use signed URL
+  // Expires in 10 years (analysis results should be accessible long-term)
+  const expires = new Date();
+  expires.setFullYear(expires.getFullYear() + 10);
   
-  return publicUrl;
+  const [signedUrl] = await file.getSignedUrl({
+    action: 'read',
+    expires: expires,
+  });
+  
+  return signedUrl;
 }
 
 /**

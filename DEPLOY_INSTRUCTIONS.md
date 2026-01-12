@@ -96,3 +96,4 @@ firebase use
 - `predeploy`는 `functions` 디렉토리에서 `npm run build`를 실행합니다
 - 따라서 프로젝트 루트에서 직접 npm을 실행할 필요가 없습니다
 
+

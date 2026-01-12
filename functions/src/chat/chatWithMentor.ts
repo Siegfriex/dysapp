@@ -366,6 +366,20 @@ export async function chatWithMentorHandler(
     const result = await chat.sendMessage(sanitizedMessage);
     const response = result.response.text();
 
+    // 디버깅: 응답 길이 확인
+    console.log(`[chatWithMentor] Response length: ${response.length} characters`);
+    if (response.length > 3000) {
+      console.log(`[chatWithMentor] Long response detected: ${response.substring(0, 100)}...`);
+    }
+
+    // 응답이 잘렸는지 확인 (Gemini API는 finishReason을 제공)
+    const finishReason = result.response.candidates?.[0]?.finishReason;
+    if (finishReason === "MAX_TOKENS") {
+      console.warn(`[chatWithMentor] Response truncated due to MAX_TOKENS limit`);
+    } else if (finishReason) {
+      console.log(`[chatWithMentor] Finish reason: ${finishReason}`);
+    }
+
     // 9. Save messages to session (use sanitized message)
     await saveMessage(sessionId, "user", sanitizedMessage);
     await saveMessage(sessionId, "assistant", response);
