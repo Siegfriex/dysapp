@@ -7,6 +7,7 @@
 import { callFunction, ensureAuth } from "./firebaseService.js";
 import { handleApiError, withErrorHandling, parseError as parseErrorFromHandler } from "./errorHandler.js";
 import { setLocalState, getLocalState, removeLocalState, clearState } from "../utils/stateManager.js";
+import { mockData, isMockModeEnabled } from "./mockData.js";
 
 // ============================================================================
 // Constants
@@ -44,6 +45,15 @@ const FUNCTION_NAMES = {
  * @returns {Promise<Object>} Analysis result
  */
 export async function analyzeDesign({ imageData, mimeType, fileName, userPrompt }) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    const result = await mockData.analyzeDesign({ imageData, mimeType, fileName, userPrompt });
+    if (result.success && result.analysisId) {
+      setLocalState("lastAnalysisId", result.analysisId);
+    }
+    return result;
+  }
+
   return withErrorHandling(async () => {
     try {
       await ensureAuth();
@@ -81,6 +91,11 @@ export async function analyzeDesign({ imageData, mimeType, fileName, userPrompt 
  * @returns {Promise<Object>} Analysis document
  */
 export async function getAnalysis(analysisId) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.getAnalysis(analysisId);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -102,6 +117,11 @@ export async function getAnalysis(analysisId) {
  * @returns {Promise<Object>} List of analyses
  */
 export async function getAnalyses(params = {}) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.getAnalyses(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -120,6 +140,11 @@ export async function getAnalyses(params = {}) {
  * @returns {Promise<Object>}
  */
 export async function deleteAnalysis(analysisId) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.deleteAnalysis(analysisId);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -144,6 +169,16 @@ export async function deleteAnalysis(analysisId) {
  * @returns {Promise<Object>} Chat response
  */
 export async function chatWithMentor({ analysisId, message, sessionId }) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    const result = await mockData.chatWithMentor({ analysisId, message, sessionId });
+    if (result.success && result.sessionId) {
+      const sessionKey = `chatSession_${analysisId}`;
+      setLocalState(sessionKey, result.sessionId);
+    }
+    return result;
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -192,6 +227,11 @@ export function getStoredSessionId(analysisId) {
  * @returns {Promise<Object>} Search results
  */
 export async function searchSimilar(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.searchSimilar(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -222,6 +262,11 @@ export async function searchSimilar(params) {
  * @returns {Promise<Object>} Search results
  */
 export async function searchText(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.searchText(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -250,6 +295,11 @@ export async function searchText(params) {
  * @returns {Promise<Object>} Search results
  */
 export async function customSearch(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.customSearch(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -274,6 +324,11 @@ export async function customSearch(params) {
  * @returns {Promise<Object>} Save result
  */
 export async function saveItem(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.saveItem(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -295,6 +350,11 @@ export async function saveItem(params) {
  * @returns {Promise<Object>} Bookmarks list with analysis metadata
  */
 export async function getBookmarks(params = {}) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.getBookmarks(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -312,6 +372,11 @@ export async function getBookmarks(params = {}) {
  * @returns {Promise<Object>} Delete result
  */
 export async function deleteBookmark(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.deleteBookmark(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
 
@@ -334,6 +399,11 @@ export async function deleteBookmark(params) {
  * @returns {Promise<Object>} User profile
  */
 export async function getUserProfile() {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.getUserProfile();
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
     return callFunction(FUNCTION_NAMES.GET_USER_PROFILE, {});
@@ -348,6 +418,11 @@ export async function getUserProfile() {
  * @returns {Promise<Object>}
  */
 export async function updateUserProfile(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.updateUserProfile(params);
+  }
+
   return withErrorHandling(async () => {
     await ensureAuth();
     return callFunction(FUNCTION_NAMES.UPDATE_USER_PROFILE, params);
@@ -422,6 +497,11 @@ export async function registerUser(params) {
  * @returns {Promise<Object>}
  */
 export async function healthCheck() {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.healthCheck();
+  }
+
   return withErrorHandling(async () => {
     return callFunction(FUNCTION_NAMES.HEALTH_CHECK, {});
   }, { showToast: false, silent: true });

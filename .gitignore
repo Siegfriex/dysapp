@@ -36,6 +36,12 @@ build/
 lib/
 *.js.map
 
+# Packages (Monorepo)
+packages/*/node_modules/
+packages/*/dist/
+packages/*/build/
+packages/*/lib/
+
 # IDE
 .vscode/
 .idea/
@@ -47,6 +53,9 @@ lib/
 # OS
 Thumbs.db
 desktop.ini
+
+# 기존 규칙 유지
+docs/SEARCH_E2E_VERIFICATION_*.md
 
 # Logs
 logs/

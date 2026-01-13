@@ -29,6 +29,7 @@ import { getCurrentUser } from '../services/firebaseService.js';
 import { toast, logoutAndRedirect } from './app.js';
 import { getLocalState, setLocalState, removeLocalState } from '../utils/stateManager.js';
 import { onChange, onClick, registerCleanup } from '../utils/eventManager.js';
+import { enableMockMode, disableMockMode, isMockModeEnabled } from '../services/mockData.js';
 
 // ============================================================================
 // State
@@ -391,6 +392,20 @@ function renderSettings() {
         ${getAccountActionsHTML()}
       </div>
     </section>
+
+    <!-- Developer Mode -->
+    <section class="settings-section">
+      <h2 class="settings-section-title">개발자 모드</h2>
+      <div class="settings-group">
+        <label class="settings-toggle-label">
+          <input type="checkbox" id="mockModeSetting" class="settings-toggle" ${isMockModeEnabled() ? 'checked' : ''}>
+          <span class="settings-toggle-text">목업 모드 활성화</span>
+        </label>
+        <p class="settings-description" style="margin-top: 1vw; font-size: 0.9vw; color: #666;">
+          목업 모드를 활성화하면 백엔드 없이 가짜 데이터로 개발할 수 있습니다.
+        </p>
+      </div>
+    </section>
   `;
   
   console.log('[Settings] 설정 섹션 렌더링 완료, innerHTML 길이:', settingsContent.innerHTML.length);
@@ -483,6 +498,21 @@ function setupEventListeners() {
       } catch (error) {
         console.error('[Settings] Failed to load auth modal:', error);
         toast.error('인증 모달을 불러올 수 없습니다.');
+      }
+    });
+    settingsUnsubscribeFunctions.push(unsub);
+  }
+
+  // Mock mode toggle
+  const mockModeToggle = settingsMain.querySelector('#mockModeSetting');
+  if (mockModeToggle) {
+    const unsub = onChange(mockModeToggle, (e) => {
+      if (e.target.checked) {
+        enableMockMode();
+        toast.success('목업 모드가 활성화되었습니다. 페이지를 새로고침하세요.');
+      } else {
+        disableMockMode();
+        toast.success('목업 모드가 비활성화되었습니다. 페이지를 새로고침하세요.');
       }
     });
     settingsUnsubscribeFunctions.push(unsub);

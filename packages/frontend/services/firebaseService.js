@@ -70,6 +70,21 @@ let storage;
  * Initialize Firebase services
  */
 export function initializeFirebase() {
+  // Check mock mode
+  const mockMode = typeof window !== 'undefined' && localStorage.getItem('dysapp:mockMode') === 'true';
+  
+  if (mockMode) {
+    console.log("[Firebase] Mock mode enabled - skipping Firebase initialization");
+    // Set mock user
+    currentUser = {
+      uid: 'mock-user-123',
+      isAnonymous: false,
+      email: 'mock@example.com',
+      displayName: 'Mock User',
+    };
+    return { app: null, auth: null, db: null, functions: null, storage: null };
+  }
+
   if (app) {
     return { app, auth, db, functions, storage };
   }
@@ -161,6 +176,22 @@ export async function signInAnonymouslyUser(retries = 3, delay = 1000) {
  * Improved: Check both currentUser cache and auth.currentUser for consistency
  */
 export async function ensureAuth(timeout = 10000) {
+  // Check mock mode
+  const mockMode = typeof window !== 'undefined' && localStorage.getItem('dysapp:mockMode') === 'true';
+  
+  if (mockMode) {
+    console.log("[Auth] Mock mode enabled - returning mock user");
+    if (!currentUser) {
+      currentUser = {
+        uid: 'mock-user-123',
+        isAnonymous: false,
+        email: 'mock@example.com',
+        displayName: 'Mock User',
+      };
+    }
+    return currentUser;
+  }
+
   if (!auth) initializeFirebase();
 
   // Check both cached currentUser and Firebase auth.currentUser for consistency
