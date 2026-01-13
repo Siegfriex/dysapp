@@ -4,7 +4,7 @@
  * Reference: settings.html 스타일 적용
  */
 
-import { onClick, registerCleanup } from '../utils/eventManager.js';
+import { onClick, onSubmit, registerCleanup } from '../utils/eventManager.js';
 import { showLoading, hideLoading, toast } from './app.js';
 
 // ============================================================================
@@ -38,12 +38,13 @@ function getAuthModalHTML(mode = 'signup') {
             <div class="auth-form-group">
               <label class="auth-form-label" for="authEmail">이메일</label>
               <input 
-                type="email" 
+                type="text" 
+                inputmode="email"
                 id="authEmail" 
                 class="auth-form-input" 
                 placeholder="example@email.com"
-                required
                 autocomplete="email"
+                aria-required="true"
               />
               <div class="auth-form-error" id="authEmailError"></div>
             </div>
@@ -55,9 +56,8 @@ function getAuthModalHTML(mode = 'signup') {
                 id="authPassword" 
                 class="auth-form-input" 
                 placeholder="비밀번호를 입력하세요"
-                required
                 autocomplete="${isSignup ? 'new-password' : 'current-password'}"
-                minlength="6"
+                aria-required="true"
               />
               <div class="auth-form-error" id="authPasswordError"></div>
             </div>
@@ -70,9 +70,8 @@ function getAuthModalHTML(mode = 'signup') {
                 id="authPasswordConfirm" 
                 class="auth-form-input" 
                 placeholder="비밀번호를 다시 입력하세요"
-                required
                 autocomplete="new-password"
-                minlength="6"
+                aria-required="true"
               />
               <div class="auth-form-error" id="authPasswordConfirmError"></div>
             </div>
@@ -98,7 +97,6 @@ function getAuthModalHTML(mode = 'signup') {
                     type="checkbox" 
                     id="authPrivacyConsent" 
                     class="auth-checkbox" 
-                    required
                     aria-required="true"
                   />
                   <span class="auth-checkbox-text">
@@ -224,12 +222,40 @@ function setupAuthModalListeners() {
     cleanupFunctions.push(unsub);
   }
   
-  // Form submit
+  // Form submit - use onSubmit instead of onClick for proper form handling
   const form = authModal.querySelector('#authForm');
   if (form) {
-    const unsub = onClick(form, async (e) => {
+    // Prevent browser default validation bubble completely
+    const onInvalidCapture = (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      // Don't show browser default validation message
+      return false;
+    };
+    
+    // Capture invalid events on form and all inputs to prevent browser bubbles
+    form.addEventListener('invalid', onInvalidCapture, true);
+    
+    // Also prevent invalid events on all input fields individually
+    const inputs = form.querySelectorAll('input, textarea, select');
+    inputs.forEach(input => {
+      input.addEventListener('invalid', onInvalidCapture, true);
+      // Set custom validity to empty string to prevent browser default messages
+      input.setCustomValidity('');
+    });
+    
+    // Use onSubmit for proper form submission handling (works for both button click and Enter key)
+    const unsub = onSubmit(form, async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       await handleAuthSubmit();
+    });
+    
+    cleanupFunctions.push(() => {
+      form.removeEventListener('invalid', onInvalidCapture, true);
+      inputs.forEach(input => {
+        input.removeEventListener('invalid', onInvalidCapture, true);
+      });
     });
     cleanupFunctions.push(unsub);
   }
@@ -526,15 +552,6 @@ async function handleAuthSubmit() {
     }
   }
   
-  // Validate password confirmation for signup
-  if (currentMode === 'signup') {
-    const passwordConfirm = authModal.querySelector('#authPasswordConfirm').value;
-    if (password !== passwordConfirm) {
-      toast.error('비밀번호가 일치하지 않습니다');
-      return;
-    }
-  }
-  
   showLoading(currentMode === 'signup' ? '회원가입 중...' : '로그인 중...');
   
   try {
@@ -627,14 +644,23 @@ async function handleLogin({ email, password }) {
   // Import here to avoid circular dependency
   const { signInWithEmailPassword } = await import('../services/firebaseService.js');
   
-  await signInWithEmailPassword(email, password);
-  
-  toast.success('로그인되었습니다!');
-  closeAuthModal();
-  // Dispatch auth changed event instead of reloading
-  // The event will be fired by app.js's onAuthChange callback automatically
-  // But we can also trigger it here to ensure immediate update
-  window.dispatchEvent(new CustomEvent("dysapp:authChanged"));
+  try {
+    await signInWithEmailPassword(email, password);
+    
+    toast.success('로그인되었습니다!');
+    closeAuthModal();
+    // Dispatch auth changed event instead of reloading
+    // The event will be fired by app.js's onAuthChange callback automatically
+    // But we can also trigger it here to ensure immediate update
+    window.dispatchEvent(new CustomEvent("dysapp:authChanged"));
+  } catch (error) {
+    // 에러 발생 시 모달 유지 및 에러 메시지 표시
+    console.error('[Auth] Login error:', error);
+    const errorMessage = error.message || '로그인 중 오류가 발생했습니다';
+    toast.error(errorMessage);
+    // 모달은 열어둠 - 사용자가 다시 시도할 수 있도록
+    throw error; // 상위 catch 블록에서 처리되도록
+  }
 }
 
 // ============================================================================
@@ -723,14 +749,14 @@ const authStyles = `
 
 .auth-modal-content {
   padding: 2.5vw;
-  padding-right: calc(2.5vw - 8px);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
   box-sizing: border-box;
+  scrollbar-gutter: stable;
 }
 
-/* 스크롤바 공간을 고려한 패딩 조정 */
+/* 스크롤바 스타일링 */
 .auth-modal-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -995,7 +1021,7 @@ const authStyles = `
   
   .auth-modal-content {
     padding: 5vw;
-    padding-right: calc(5vw - 8px);
+    scrollbar-gutter: stable;
   }
   
   .auth-modal-title {

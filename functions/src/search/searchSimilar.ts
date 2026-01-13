@@ -53,7 +53,9 @@ async function findSimilarDesigns(
     query = query.where("fixScope", "==", filterFixScope) as FirebaseFirestore.CollectionReference;
   }
 
-  if (minScore !== undefined) {
+  // Firestore cannot compare using >,>=,<,<= against null.
+  // Some callers may pass null from JSON payload even if the TS type is number | undefined.
+  if (typeof minScore === "number") {
     query = query.where("overallScore", ">=", minScore) as FirebaseFirestore.CollectionReference;
   }
 
@@ -194,7 +196,14 @@ export async function searchSimilarHandler(
   }
 
   // 3. Validate input
-  const { analysisId, limit, filterFormat, filterFixScope, minScore } = data;
+  const {
+    analysisId,
+    limit,
+    filterFormat,
+    filterFixScope,
+    minScore: minScoreRaw,
+  } = data;
+  const minScore = typeof minScoreRaw === "number" ? minScoreRaw : undefined;
 
   if (!analysisId) {
     throw new functions.https.HttpsError(

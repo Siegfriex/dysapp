@@ -135,7 +135,9 @@ async function searchTextHandler(
   const limit = Math.min(data.limit || 20, LIMITS.MAX_SEARCH_RESULTS);
   const filterFormat = data.filterFormat;
   const filterFixScope = data.filterFixScope;
-  const minScore = data.minScore;
+  // Firestore cannot compare using >,>=,<,<= against null.
+  // Some callers may pass null from JSON payload even if the TS type is number | undefined.
+  const minScore = typeof data.minScore === "number" ? data.minScore : undefined;
 
   try {
     console.log(`[searchText] Searching for: "${query}" by user ${userId}`);
@@ -154,7 +156,7 @@ async function searchTextHandler(
       queryRef = queryRef.where("fixScope", "==", filterFixScope) as FirebaseFirestore.Query;
     }
 
-    if (minScore !== undefined) {
+    if (typeof minScore === "number") {
       queryRef = queryRef.where("overallScore", ">=", minScore) as FirebaseFirestore.Query;
     }
 

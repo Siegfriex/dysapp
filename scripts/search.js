@@ -304,16 +304,18 @@ async function performCustomSearch(query, start = 1) {
       hideLoading();
     }
 
-    if (searchResult.success) {
+    // Improved response validation: check for success field and items array
+    if (searchResult && searchResult.items && Array.isArray(searchResult.items)) {
+      // Success case: items array exists (success field may or may not be present)
       if (start === 1) {
         // Replace results for first page
-        customSearchResults = searchResult.items || [];
+        customSearchResults = searchResult.items;
         currentSearchQuery = query.trim();
         currentSearchStart = 1;
         hasMoreResults = searchResult.items.length >= 10;
       } else {
         // Append results for subsequent pages
-        customSearchResults = [...customSearchResults, ...(searchResult.items || [])];
+        customSearchResults = [...customSearchResults, ...searchResult.items];
         hasMoreResults = searchResult.items.length >= 10;
       }
 
@@ -321,11 +323,14 @@ async function performCustomSearch(query, start = 1) {
       
       if (start === 1 && customSearchResults.length > 0) {
         toast.success(`${customSearchResults.length}개의 관련 이미지를 찾았습니다`);
+      } else if (start === 1 && customSearchResults.length === 0) {
+        toast.info("검색 결과가 없습니다");
       }
     } else {
+      // Invalid response structure
+      console.warn("[Search] Invalid search result structure:", searchResult);
       if (start === 1) {
-        hideLoading();
-        toast.error("검색 중 오류가 발생했습니다");
+        toast.error("검색 결과를 처리할 수 없습니다");
       }
     }
   } catch (error) {
@@ -333,7 +338,20 @@ async function performCustomSearch(query, start = 1) {
       hideLoading();
     }
     console.error("[Search] Custom search failed:", error);
-    toast.error("검색 중 오류가 발생했습니다");
+    
+    // Improved error handling with specific error messages
+    const errorCode = error?.code || "";
+    const errorMessage = error?.message || "";
+    
+    if (errorCode === "functions/unauthenticated" || errorMessage.includes("unauthenticated")) {
+      toast.error("로그인이 필요합니다. 잠시 후 다시 시도해주세요.");
+    } else if (errorCode === "functions/resource-exhausted" || errorMessage.includes("rate limit")) {
+      toast.warning("요청이 너무 많습니다. 잠시 후 다시 시도해주세요.");
+    } else if (errorMessage.includes("네트워크") || errorMessage.includes("network")) {
+      toast.error("네트워크 연결을 확인해주세요.");
+    } else {
+      toast.error("검색 중 오류가 발생했습니다");
+    }
   } finally {
     isLoadingMore = false;
   }

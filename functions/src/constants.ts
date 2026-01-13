@@ -136,7 +136,9 @@ export const TIMEOUTS = {
 export const MEMORY = {
   ANALYZE_DESIGN: "512MiB",
   CHAT_WITH_MENTOR: "256MiB",
-  SEARCH_SIMILAR: "256MiB",
+  // NOTE: Some lightweight functions can still exceed 256MiB at cold start due to shared dependencies
+  // (Firebase Functions v2 Cloud Run container initialization + module load). Use 512MiB for stability.
+  SEARCH_SIMILAR: "512MiB",
   CUSTOM_SEARCH: "512MiB",
   DEFAULT: "512MiB",
 } as const;

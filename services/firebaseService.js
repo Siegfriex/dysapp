@@ -158,13 +158,20 @@ export async function signInAnonymouslyUser(retries = 3, delay = 1000) {
 /**
  * Ensure user is authenticated (sign in anonymously if not)
  * Includes timeout and better error handling
+ * Improved: Check both currentUser cache and auth.currentUser for consistency
  */
 export async function ensureAuth(timeout = 10000) {
   if (!auth) initializeFirebase();
 
-  // Already authenticated
-  if (currentUser) {
-    return currentUser;
+  // Check both cached currentUser and Firebase auth.currentUser for consistency
+  // This handles cases where currentUser might be out of sync
+  const authUser = auth.currentUser;
+  if (currentUser || authUser) {
+    // Sync currentUser with auth.currentUser if they differ
+    if (authUser && currentUser?.uid !== authUser.uid) {
+      currentUser = authUser;
+    }
+    return currentUser || authUser;
   }
 
   return new Promise((resolve, reject) => {
@@ -187,6 +194,7 @@ export async function ensureAuth(timeout = 10000) {
         resolved = true;
         resolve(user);
       } else {
+        // User is not authenticated, try anonymous sign-in
         try {
           const newUser = await signInAnonymouslyUser();
           if (!resolved) {

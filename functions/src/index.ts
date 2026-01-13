@@ -59,7 +59,9 @@ export const healthCheck = functions.https.onCall(
   {
     region: FUNCTIONS_REGION,
     timeoutSeconds: 10,
-    memory: "256MiB",
+    // NOTE: Cloud Run cold-start can exceed 256MiB due to shared dependency loading.
+    // Use 512MiB to prevent startup probe failures.
+    memory: "512MiB",
   },
   async () => {
     return {

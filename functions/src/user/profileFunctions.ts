@@ -157,18 +157,28 @@ export async function getUserProfileHandler(
 
     if (!userDoc.exists) {
       // Create default profile if it doesn't exist
+      // Note: For anonymous users, privacyConsent is not set here
+      // They must use registerUser to upgrade and provide privacyConsent
+      // For email authenticated users, privacyConsent should be provided via registerUser
+      const authToken = request.auth.token;
+      const isAnonymous = authToken.firebase?.sign_in_provider === "anonymous";
+      
       const defaultProfile: UserDocument = {
         uid: userId,
-        email: request.auth.token.email,
+        email: request.auth.token.email || undefined,
         displayName: request.auth.token.name || undefined,
         photoURL: request.auth.token.picture || undefined,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         subscriptionTier: "free",
         analysisCount: 0,
+        // privacyConsent is only set via registerUser function
+        // Anonymous users must upgrade via registerUser to provide consent
       };
 
       await db.collection(COLLECTIONS.USERS).doc(userId).set(defaultProfile);
+      
+      console.log(`[getUserProfile] Created default profile for user ${userId}, Anonymous: ${isAnonymous}`);
 
       return {
         success: true,
