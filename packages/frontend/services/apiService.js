@@ -442,6 +442,11 @@ export async function updateUserProfile(params) {
  * @returns {Promise<Object>}
  */
 export async function registerUser(params) {
+  // Check mock mode
+  if (isMockModeEnabled()) {
+    return await mockData.registerUser(params);
+  }
+
   return withErrorHandling(async () => {
     const { email, password, displayName, privacyConsent } = params;
     
