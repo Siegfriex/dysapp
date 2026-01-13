@@ -11,6 +11,7 @@ import {
   COLLECTIONS,
   TIMEOUTS,
   MEMORY,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import { checkRateLimit } from "../utils/rateLimiter";
 import { validateAnalysisId } from "../utils/validation";
@@ -22,9 +23,12 @@ import {
   AnalysisDocument,
   UserDocument,
   AnalysisSummary,
+  RegisterUserRequest,
+  RegisterUserResponse,
+  PrivacyConsent,
 } from "../types";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 
 // ============================================================================
 // getAnalyses - User's analysis history
@@ -484,4 +488,138 @@ export const deleteAnalysis = functions.https.onCall(
     memory: MEMORY.DEFAULT,
   },
   deleteAnalysisHandler
+);
+
+// ============================================================================
+// registerUser - Register new user or upgrade anonymous account
+// ============================================================================
+
+export async function registerUserHandler(
+  request: functions.https.CallableRequest<RegisterUserRequest>
+): Promise<RegisterUserResponse> {
+  // 1. Auth check
+  if (!request.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication required"
+    );
+  }
+
+  const userId = request.auth.uid;
+  const data = request.data;
+  // Check if user is anonymous (for logging purposes)
+  // In Firebase Auth, anonymous users have sign_in_provider = "anonymous"
+  const authToken = request.auth.token;
+  const isAnonymous = authToken.firebase?.sign_in_provider === "anonymous";
+
+  try {
+    // 2. Validate request data
+    if (!data.email || typeof data.email !== "string") {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Email is required"
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Invalid email format"
+      );
+    }
+
+    // Validate privacy consent
+    if (!data.privacyConsent || !data.privacyConsent.consented) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Privacy consent is required"
+      );
+    }
+
+    if (!data.privacyConsent.version || typeof data.privacyConsent.version !== "string") {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Privacy consent version is required"
+      );
+    }
+
+    console.log(`[registerUser] User ${userId}, Email ${data.email}, Anonymous: ${isAnonymous}`);
+
+    // 3. Build privacy consent object
+    // Note: IP address is optional and may not be available in callable functions
+    const privacyConsent: PrivacyConsent = {
+      consented: true,
+      version: data.privacyConsent.version,
+      agreedAt: FieldValue.serverTimestamp(),
+      ip: data.privacyConsent.ip || undefined, // IP is optional, not available in callable context
+    };
+
+    // 4. Get or create user document
+    const userDoc = await db.collection(COLLECTIONS.USERS).doc(userId).get();
+
+    if (userDoc.exists) {
+      // Update existing user (anonymous upgrade case)
+      const updates: Record<string, unknown> = {
+        email: data.email,
+        updatedAt: FieldValue.serverTimestamp(),
+        privacyConsent,
+      };
+
+      if (data.displayName) {
+        updates.displayName = data.displayName.trim();
+      }
+
+      await db.collection(COLLECTIONS.USERS).doc(userId).update(updates);
+
+      console.log(`[registerUser] Updated user ${userId} (anonymous upgrade)`);
+
+      return {
+        success: true,
+        userId,
+        email: data.email,
+        isAnonymousUpgrade: true,
+      };
+    } else {
+      // Create new user document
+      const newUser: UserDocument = {
+        uid: userId,
+        email: data.email,
+        displayName: data.displayName?.trim() || undefined,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        subscriptionTier: "free",
+        analysisCount: 0,
+        privacyConsent,
+      };
+
+      await db.collection(COLLECTIONS.USERS).doc(userId).set(newUser);
+
+      console.log(`[registerUser] Created new user ${userId}`);
+
+      return {
+        success: true,
+        userId,
+        email: data.email,
+        isAnonymousUpgrade: false,
+      };
+    }
+  } catch (error) {
+    // HttpsError는 그대로 전달
+    if (error instanceof functions.https.HttpsError) {
+      throw error;
+    }
+    // 기타 에러는 handleError로 처리
+    throw handleError(error, "registerUser", userId);
+  }
+}
+
+export const registerUser = functions.https.onCall(
+  {
+    region: FUNCTIONS_REGION,
+    timeoutSeconds: TIMEOUTS.GET_USER_PROFILE,
+    memory: MEMORY.DEFAULT,
+  },
+  registerUserHandler
 );

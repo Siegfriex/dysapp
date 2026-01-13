@@ -25,8 +25,10 @@
 // ============================================================================
 
 import { getUserProfile } from '../services/apiService.js';
+import { getCurrentUser } from '../services/firebaseService.js';
 import { onClick, registerCleanup } from '../utils/eventManager.js';
 import { setHTML, escapeHTML } from '../utils/domHelper.js';
+import { toast } from './app.js';
 
 // ============================================================================
 // State
@@ -295,16 +297,38 @@ async function handleSubscribe(plan) {
     return;
   }
   
+  // Check if user is authenticated (not anonymous)
+  const currentUser = getCurrentUser();
+  const isAnonymous = currentUser && currentUser.isAnonymous;
+  
+  if (isAnonymous || !currentUser) {
+    // Guest user - prompt to sign up/login
+    toast.info('구독하려면 회원가입이 필요합니다');
+    setTimeout(async () => {
+      try {
+        const { showAuthModal } = await import('./auth.js');
+        showAuthModal('signup');
+      } catch (error) {
+        console.error('[Subscribe] Failed to load auth modal:', error);
+        toast.error('인증 모달을 불러올 수 없습니다.');
+      }
+    }, 500);
+    return;
+  }
+  
   try {
     // TODO: Implement actual subscription payment flow
     // This would typically integrate with a payment provider
     console.log('구독 시작:', plan);
     
-    // For now, show a confirmation message
-    alert(`${plan.name} 플랜(${plan.price.toLocaleString()}원/${plan.period})을 구독하시겠습니까?\n\n결제 기능은 추후 구현 예정입니다.`);
+    // Show confirmation using toast (consistent with app feedback)
+    const confirmed = confirm(`${plan.name} 플랜(${plan.price.toLocaleString()}원/${plan.period})을 구독하시겠습니까?\n\n결제 기능은 추후 구현 예정입니다.`);
+    if (confirmed) {
+      toast.info('결제 기능은 추후 구현 예정입니다');
+    }
   } catch (error) {
     console.error('구독 처리 오류:', error);
-    alert('구독 처리 중 오류가 발생했습니다.');
+    toast.error('구독 처리 중 오류가 발생했습니다.');
   }
 }
 

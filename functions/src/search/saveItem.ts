@@ -11,11 +11,12 @@ import {
   COLLECTIONS,
   TIMEOUTS,
   MEMORY,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import { checkRateLimit } from "../utils/rateLimiter";
 import { handleError } from "../utils/errorHandler";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 
 export interface SaveItemRequest {
   analysisId: string;

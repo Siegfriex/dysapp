@@ -144,12 +144,20 @@ export interface UserDocument {
   preferences?: UserPreferences;
   subscriptionTier?: "free" | "pro" | "enterprise";
   analysisCount?: number;
+  privacyConsent?: PrivacyConsent;
 }
 
 export interface UserPreferences {
   preferredFormats?: FormatPrediction[];
   preferredColors?: string[];
   language?: string;
+}
+
+export interface PrivacyConsent {
+  consented: boolean;
+  version: string;
+  agreedAt: Timestamp | FieldValue;
+  ip?: string;
 }
 
 export interface BookmarkDocument {
@@ -326,6 +334,28 @@ export interface AnalysisSummary {
 export interface GetUserProfileResponse {
   success: boolean;
   profile: UserDocument | null;
+}
+
+// ============================================================================
+// Registration & Authentication Types
+// ============================================================================
+
+export interface RegisterUserRequest {
+  email: string;
+  password: string;
+  displayName?: string;
+  privacyConsent: {
+    consented: boolean;
+    version: string;
+    ip?: string;
+  };
+}
+
+export interface RegisterUserResponse {
+  success: boolean;
+  userId: string;
+  email: string;
+  isAnonymousUpgrade?: boolean;
 }
 
 // ============================================================================

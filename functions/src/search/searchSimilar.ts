@@ -14,6 +14,7 @@ import {
   LIMITS,
   THRESHOLDS,
   EMBEDDING_DIM,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import {
   SearchSimilarRequest,
@@ -27,7 +28,7 @@ import { checkRateLimit } from "../utils/rateLimiter";
 import { validateAnalysisId } from "../utils/validation";
 import { handleError } from "../utils/errorHandler";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 
 /**
  * Find similar designs using Firestore Vector Search

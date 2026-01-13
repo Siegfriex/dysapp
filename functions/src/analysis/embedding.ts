@@ -5,7 +5,7 @@
  */
 
 import * as aiplatform from "@google-cloud/aiplatform";
-import { FUNCTIONS_REGION } from "../constants";
+import { VERTEX_AI_REGION } from "../constants";
 import { getValidatedProjectId } from "../utils/envValidation";
 
 /**
@@ -19,7 +19,7 @@ export async function generateImageEmbedding(
 ): Promise<number[]> {
   try {
     const projectId = getValidatedProjectId();
-    const location = FUNCTIONS_REGION;
+    const location = VERTEX_AI_REGION;
     const model = "multimodalembedding@001";
 
     // Initialize PredictionServiceClient

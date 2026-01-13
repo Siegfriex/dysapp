@@ -17,6 +17,7 @@ import {
   TIMEOUTS,
   MEMORY,
   LIMITS,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import {
   AnalyzeDesignRequest,
@@ -36,7 +37,7 @@ import {
 import { handleError } from "../utils/errorHandler";
 import { getValidatedApiKey } from "../utils/envValidation";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 const storage = getStorage();
 
 /**

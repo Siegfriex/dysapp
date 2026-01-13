@@ -25,7 +25,10 @@
 // ============================================================================
 
 import { getUserProfile } from '../services/apiService.js';
-import { signOut } from '../services/firebaseService.js';
+import { getCurrentUser } from '../services/firebaseService.js';
+import { toast, logoutAndRedirect } from './app.js';
+import { getLocalState, setLocalState, removeLocalState } from '../utils/stateManager.js';
+import { onChange, onClick, registerCleanup } from '../utils/eventManager.js';
 
 // ============================================================================
 // State
@@ -72,10 +75,16 @@ async function initializeSettingsPage() {
       }
     }
     
+    // Wait for app initialization to check user auth status
+    await waitForAppInitialization();
+    
+    // Listen for auth state changes to re-render account section
+    setupAuthStateListener();
+    
     // Render settings sections immediately (before network call)
     renderSettings();
     
-    // Load user settings from backend (non-blocking)
+    // Load user settings from backend (non-blocking, only if authenticated)
     try {
       await loadUserSettings();
     } catch (err) {
@@ -95,6 +104,82 @@ async function initializeSettingsPage() {
     // Even if there's an error, try to render basic content
     renderSettings();
   }
+}
+
+/**
+ * Wait for app initialization to complete
+ */
+function waitForAppInitialization() {
+  return new Promise((resolve) => {
+    if (window.dysapp?.initialized) {
+      resolve();
+      return;
+    }
+    
+    const checkInterval = setInterval(() => {
+      if (window.dysapp?.initialized) {
+        clearInterval(checkInterval);
+        resolve();
+      }
+    }, 100);
+    
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      resolve();
+    }, 5000);
+  });
+}
+
+/**
+ * Setup listener for auth state changes to update account section
+ */
+function setupAuthStateListener() {
+  const cleanupFunctions = [];
+  
+  // Event listener
+  const authChangeHandler = () => {
+    console.log('[Settings] Auth state changed, re-rendering account section');
+    renderSettings();
+    setTimeout(() => {
+      setupEventListeners();
+    }, 100);
+  };
+  
+  window.addEventListener('dysapp:authChanged', authChangeHandler);
+  cleanupFunctions.push(() => {
+    window.removeEventListener('dysapp:authChanged', authChangeHandler);
+  });
+  
+  // Polling interval
+  let lastUserState = JSON.stringify(window.dysapp?.user);
+  const pollInterval = setInterval(() => {
+    const currentUserState = JSON.stringify(window.dysapp?.user);
+    if (currentUserState !== lastUserState) {
+      console.log('[Settings] User state changed (polling), re-rendering account section');
+      lastUserState = currentUserState;
+      renderSettings();
+      setTimeout(() => {
+        setupEventListeners();
+      }, 100);
+    }
+  }, 2000);
+  
+  cleanupFunctions.push(() => {
+    clearInterval(pollInterval);
+  });
+  
+  // Cleanup 등록
+  registerCleanup(() => {
+    cleanupFunctions.forEach((fn) => {
+      try {
+        fn();
+      } catch (error) {
+        console.error('[Settings] Error during auth listener cleanup:', error);
+      }
+    });
+    cleanupFunctions.length = 0;
+  });
 }
 
 /**
@@ -122,7 +207,13 @@ function setActiveNavigation() {
     trySetActive();
     
     // Also listen for nav loaded event
-    window.addEventListener('dysapp:navLoaded', trySetActive, { once: true });
+    const navLoadedHandler = trySetActive;
+    window.addEventListener('dysapp:navLoaded', navLoadedHandler, { once: true });
+    
+    // Register cleanup for nav loaded listener
+    registerCleanup(() => {
+      window.removeEventListener('dysapp:navLoaded', navLoadedHandler);
+    });
     
     // Fallback timeout
     setTimeout(trySetActive, 500);
@@ -139,9 +230,15 @@ function initWhenReady() {
 }
 
 // Also listen for nav loaded event
-window.addEventListener('dysapp:navLoaded', () => {
+const navLoadedGlobalHandler = () => {
   setActiveNavigation();
-}, { once: true });
+};
+window.addEventListener('dysapp:navLoaded', navLoadedGlobalHandler, { once: true });
+
+// Register cleanup for global nav loaded listener
+registerCleanup(() => {
+  window.removeEventListener('dysapp:navLoaded', navLoadedGlobalHandler);
+});
 
 // Initialize
 if (document.readyState === 'loading') {
@@ -185,6 +282,30 @@ async function loadUserSettings() {
 // ============================================================================
 // Render Settings
 // ============================================================================
+
+/**
+ * Get account actions HTML based on user authentication status
+ */
+function getAccountActionsHTML() {
+  // Check user from window.dysapp.user (set by app.js) or getCurrentUser()
+  const user = window.dysapp?.user || getCurrentUser();
+  const isAnonymous = user && user.isAnonymous;
+  const isAuthenticated = user && !user.isAnonymous;
+  
+  if (isAuthenticated) {
+    // Logged in user: Show profile management and logout
+    return `
+      <a href="./mypage.html" class="settings-action-link">프로필 관리</a>
+      <button class="settings-action-btn" id="logoutBtn">로그아웃</button>
+    `;
+  } else {
+    // Anonymous or not authenticated: Show signup/login options
+    return `
+      <button class="settings-action-link" id="signupBtn">회원가입</button>
+      <button class="settings-action-link" id="loginBtn">로그인</button>
+    `;
+  }
+}
 
 function renderSettings() {
   // Scope selector to main.settings_main to avoid conflicts with nav.html
@@ -266,9 +387,8 @@ function renderSettings() {
     <!-- Account Actions -->
     <section class="settings-section">
       <h2 class="settings-section-title">계정</h2>
-      <div class="settings-actions">
-        <a href="./mypage.html" class="settings-action-link">프로필 관리</a>
-        <button class="settings-action-btn" id="logoutBtn">로그아웃</button>
+      <div class="settings-actions" id="accountActions">
+        ${getAccountActionsHTML()}
       </div>
     </section>
   `;
@@ -338,6 +458,36 @@ function setupEventListeners() {
     settingsUnsubscribeFunctions.push(unsub);
   }
 
+  // Signup button
+  const signupBtn = settingsMain.querySelector('#signupBtn');
+  if (signupBtn) {
+    const unsub = onClick(signupBtn, async () => {
+      try {
+        const { showAuthModal } = await import('./auth.js');
+        showAuthModal('signup');
+      } catch (error) {
+        console.error('[Settings] Failed to load auth modal:', error);
+        toast.error('인증 모달을 불러올 수 없습니다.');
+      }
+    });
+    settingsUnsubscribeFunctions.push(unsub);
+  }
+
+  // Login button
+  const loginBtn = settingsMain.querySelector('#loginBtn');
+  if (loginBtn) {
+    const unsub = onClick(loginBtn, async () => {
+      try {
+        const { showAuthModal } = await import('./auth.js');
+        showAuthModal('login');
+      } catch (error) {
+        console.error('[Settings] Failed to load auth modal:', error);
+        toast.error('인증 모달을 불러올 수 없습니다.');
+      }
+    });
+    settingsUnsubscribeFunctions.push(unsub);
+  }
+
   // Register cleanup callback
   registerCleanup(() => {
     settingsUnsubscribeFunctions.forEach((unsub) => unsub());
@@ -373,11 +523,11 @@ async function handleLogout() {
   }
   
   try {
-    await signOut();
-    window.location.href = './index.html';
+    // Use standardized logout function
+    await logoutAndRedirect();
   } catch (error) {
     console.error('로그아웃 오류:', error);
-    alert('로그아웃 중 오류가 발생했습니다.');
+    toast.error('로그아웃 중 오류가 발생했습니다.');
   }
 }
 

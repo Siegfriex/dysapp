@@ -134,6 +134,8 @@ async function getLastAnalysisData() {
     }
   } catch (error) {
     console.error("[Search] Failed to get last analysis:", error);
+    // 리다이렉트하지 않고 null 반환
+    return null;
   }
 
   return null;
@@ -225,6 +227,13 @@ async function searchByImage(file) {
  * Search from existing analysis
  */
 async function searchFromAnalysis(analysisId) {
+  if (!analysisId) {
+    // 빈 결과 표시
+    searchResults = [];
+    renderSearchResults();
+    return;
+  }
+
   try {
     showLoading("유사한 디자인 검색 중...");
 
@@ -241,11 +250,20 @@ async function searchFromAnalysis(analysisId) {
       searchResults = adapted.items;
       renderSearchResults();
       toast.success(`${adapted.count}개의 유사한 디자인을 찾았습니다`);
+    } else {
+      // 검색 실패 시 빈 결과 표시 (리다이렉트 없음)
+      searchResults = [];
+      renderSearchResults();
+      const errorMessage = searchResult.message || searchResult.error || '검색 중 오류가 발생했습니다';
+      toast.error(errorMessage);
     }
   } catch (error) {
     hideLoading();
+    // 에러 발생 시에도 리다이렉트하지 않고 빈 결과 표시
+    searchResults = [];
+    renderSearchResults();
     console.error("[Search] Search failed:", error);
-    toast.error("검색 중 오류가 발생했습니다");
+    toast.error("검색 중 오류가 발생했습니다. 다시 시도해주세요");
   }
 }
 
@@ -341,7 +359,8 @@ async function loadMoreSearchResults() {
 }
 
 /**
- * Auto search on page load based on last analysis
+ * Auto search on page load based on current category tab
+ * Matches the initial tab state with actual data loading
  */
 async function autoSearchOnPageLoad() {
   // Show initial loading state
@@ -354,35 +373,79 @@ async function autoSearchOnPageLoad() {
     `;
   }
 
-  const analysisData = await getLastAnalysisData();
-  
-  if (analysisData) {
-    lastAnalysisData = analysisData;
-    const query = generateSearchQuery(analysisData);
-    
-    if (query) {
-      // Small delay to ensure UI is ready
-      setTimeout(() => {
-        performCustomSearch(query, 1);
-      }, 300);
-    } else {
-      // No query available, show empty state
-      if (resultsGrid) {
-        resultsGrid.innerHTML = `
-          <div class="no-results" style="grid-column: 1 / -1;">
-            <p>검색할 키워드를 찾지 못했습니다</p>
-            <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
-          </div>
-        `;
-      }
+  // Load data based on current category
+  try {
+    switch (currentCategory) {
+      case "my-style":
+        // Load similar designs from user's analyses
+        const lastAnalysisId = getLastAnalysisId();
+        if (lastAnalysisId) {
+          await searchFromAnalysis(lastAnalysisId);
+        } else {
+          if (resultsGrid) {
+            resultsGrid.innerHTML = `
+              <div class="no-results" style="grid-column: 1 / -1;">
+                <p>검색 결과가 없습니다</p>
+                <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+              </div>
+            `;
+          }
+        }
+        break;
+      case "my-reference":
+        // Load bookmarks
+        await loadBookmarks();
+        break;
+      case "insights":
+        // Load custom search results
+        const analysisData = await getLastAnalysisData();
+        if (analysisData) {
+          lastAnalysisData = analysisData;
+          const query = generateSearchQuery(analysisData);
+          if (query) {
+            setTimeout(() => {
+              performCustomSearch(query, 1);
+            }, 300);
+          } else {
+            if (resultsGrid) {
+              resultsGrid.innerHTML = `
+                <div class="no-results" style="grid-column: 1 / -1;">
+                  <p>검색할 키워드를 찾지 못했습니다</p>
+                  <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+                </div>
+              `;
+            }
+          }
+        } else {
+          if (resultsGrid) {
+            resultsGrid.innerHTML = `
+              <div class="no-results" style="grid-column: 1 / -1;">
+                <p>검색 결과가 없습니다</p>
+                <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+              </div>
+            `;
+          }
+        }
+        break;
+      default:
+        // Default to empty state
+        if (resultsGrid) {
+          resultsGrid.innerHTML = `
+            <div class="no-results" style="grid-column: 1 / -1;">
+              <p>검색 결과가 없습니다</p>
+              <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+            </div>
+          `;
+        }
     }
-  } else {
-    // No analysis data, show empty state
+  } catch (error) {
+    // 에러 발생 시에도 리다이렉트하지 않고 빈 결과 표시
+    console.error("[Search] Auto search failed:", error);
     if (resultsGrid) {
       resultsGrid.innerHTML = `
         <div class="no-results" style="grid-column: 1 / -1;">
-          <p>검색 결과가 없습니다</p>
-          <p class="no-results-hint">이미지를 업로드하거나 검색어를 입력해주세요</p>
+          <p>검색 중 오류가 발생했습니다</p>
+          <p class="no-results-hint">다시 시도해주세요</p>
         </div>
       `;
     }
@@ -730,10 +793,23 @@ async function handleCategoryChange(category) {
       await loadBookmarks();
       break;
     case "insights":
-      // Show high-scoring examples
-      currentFilters.minScore = 80;
+      // Show custom search results (web recommendations)
       bookmarkResults = [];
-      await quickSearchFromLastAnalysis();
+      // Use custom search based on last analysis
+      const analysisData = await getLastAnalysisData();
+      if (analysisData) {
+        lastAnalysisData = analysisData;
+        const query = generateSearchQuery(analysisData);
+        if (query) {
+          await performCustomSearch(query, 1);
+        } else {
+          toast.info("먼저 이미지를 분석해주세요");
+          renderSearchResults([]);
+        }
+      } else {
+        toast.info("먼저 이미지를 분석해주세요");
+        renderSearchResults([]);
+      }
       break;
     default:
       currentFilters = { format: null, fixScope: null, minScore: null };
@@ -1054,17 +1130,33 @@ function setupEventListeners() {
     const unsub = addEventListener(modalBox, "click", (e) => {
       const action = e.target.closest("[id^='searchModal']")?.id;
       const resultId = modalBox.dataset.resultId;
+      const resultSource = modalBox.dataset.resultSource;
       const resultIndex = parseInt(modalBox.dataset.resultIndex, 10);
-      const result = searchResults[resultIndex];
+      
+      // Get result based on source
+      let result = null;
+      if (resultSource === "custom") {
+        result = customSearchResults[resultIndex];
+      } else if (resultSource === "bookmark") {
+        result = bookmarkResults[resultIndex];
+      } else {
+        // Default to firestore searchResults
+        result = searchResults[resultIndex];
+      }
 
       if (!result) return;
 
       if (action === "searchModalSaveBtn") {
         e.stopPropagation();
+        // Custom search results cannot be saved (external links)
+        if (resultSource === "custom") {
+          toast.info("외부 이미지는 저장할 수 없습니다. 원본 링크를 확인해주세요.");
+          return;
+        }
         handleSave(resultId);
       } else if (action === "searchModalShareBtn") {
         e.stopPropagation();
-        handleShare(resultId);
+        handleShare(resultId, resultSource);
       } else if (action === "searchModalDownloadBtn") {
         e.stopPropagation();
         handleDownload(resultId);
@@ -1103,11 +1195,28 @@ async function handleSave(resultId) {
 
 /**
  * Handle share action - copy link to clipboard
+ * @param {string} resultId - Result ID
+ * @param {string} [resultSource] - Result source: "custom", "bookmark", or "firestore"
  */
-async function handleShare(resultId) {
+async function handleShare(resultId, resultSource = "firestore") {
   try {
-    // Create share URL
-    const shareUrl = `${window.location.origin}/analyze.html?id=${resultId}`;
+    let shareUrl = null;
+    
+    if (resultSource === "custom") {
+      // For custom search results, share the original link
+      const modalBox = document.getElementById("searchResultModalBox");
+      const resultIndex = parseInt(modalBox?.dataset.resultIndex, 10);
+      const result = customSearchResults[resultIndex];
+      if (result && result.link) {
+        shareUrl = result.link;
+      } else {
+        toast.info("공유할 링크가 없습니다");
+        return;
+      }
+    } else {
+      // For Firestore/bookmark results, share analysis page
+      shareUrl = `${window.location.origin}/analyze.html?id=${resultId}`;
+    }
     
     // Copy to clipboard
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1338,8 +1447,25 @@ function openResultModal(result) {
     modalBox.dataset.resultId = result.id;
     modalBox.dataset.resultIndex = customSearchResults.indexOf(result).toString();
     modalBox.dataset.resultSource = "custom";
+    
+    // Disable save button for custom search results (external links cannot be saved)
+    const saveBtn = document.getElementById("searchModalSaveBtn");
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = "0.5";
+      saveBtn.style.cursor = "not-allowed";
+      saveBtn.title = "외부 이미지는 저장할 수 없습니다";
+    }
   } else {
     // Firestore result (existing logic)
+    // Ensure save button is enabled for Firestore results
+    const saveBtn = document.getElementById("searchModalSaveBtn");
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.style.opacity = "1";
+      saveBtn.style.cursor = "pointer";
+      saveBtn.title = "";
+    }
     const imageEl = document.getElementById("searchModalImage");
     const titleEl = document.getElementById("searchModalTitle");
     const similarityEl = document.getElementById("searchModalSimilarity");

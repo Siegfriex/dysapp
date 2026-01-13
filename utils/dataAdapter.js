@@ -451,6 +451,11 @@ export function adaptUserProfile(apiResponse) {
     analysisCount: profile.analysisCount || 0,
     createdAt: formatDate(profile.createdAt),
     preferences: profile.preferences || {},
+    privacyConsent: profile.privacyConsent ? {
+      consented: profile.privacyConsent.consented,
+      version: profile.privacyConsent.version,
+      agreedAt: formatDate(profile.privacyConsent.agreedAt),
+    } : null,
   };
 }
 

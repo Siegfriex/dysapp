@@ -15,6 +15,7 @@ import {
   TIMEOUTS,
   MEMORY,
   LIMITS,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import {
   ChatRequest,
@@ -32,7 +33,7 @@ import {
 import { handleError } from "../utils/errorHandler";
 import { getValidatedApiKey } from "../utils/envValidation";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 
 /**
  * Build system instruction based on analysis context

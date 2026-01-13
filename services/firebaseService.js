@@ -9,11 +9,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebas
 import {
   getAuth,
   signInAnonymously,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  linkWithCredential,
+  EmailAuthProvider,
+  updateProfile,
   onAuthStateChanged,
   signOut as firebaseSignOut,
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import {
   getFirestore,
+  connectFirestoreEmulator,
   collection,
   doc,
   getDoc,
@@ -70,7 +76,8 @@ export function initializeFirebase() {
 
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+  // Use 'dysapp' database (nam5 region) instead of default
+  db = getFirestore(app, "dysapp");
   functions = getFunctions(app, "asia-northeast3");
   storage = getStorage(app);
 
@@ -78,7 +85,8 @@ export function initializeFirebase() {
   if (window.location.hostname === "localhost") {
     console.log("[Firebase] Connecting to emulators...");
     connectFunctionsEmulator(functions, "localhost", 5001);
-    // Note: Add other emulator connections if needed
+    connectFirestoreEmulator(db, "localhost", 8080);
+    console.log("[Firebase] Connected to Firestore emulator (dysapp database)");
   }
 
   console.log("[Firebase] Initialized successfully");
@@ -210,6 +218,123 @@ export async function signOut() {
     console.error("[Auth] Sign-out failed:", error);
     throw error;
   }
+}
+
+/**
+ * Create user with email and password
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<User>}
+ */
+export async function createUserWithEmailPassword(email, password) {
+  if (!auth) initializeFirebase();
+
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    currentUser = result.user;
+    console.log("[Auth] User created:", result.user.uid);
+    return result.user;
+  } catch (error) {
+    console.error("[Auth] Create user failed:", error);
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Sign in with email and password
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<User>}
+ */
+export async function signInWithEmailPassword(email, password) {
+  if (!auth) initializeFirebase();
+
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    currentUser = result.user;
+    console.log("[Auth] Signed in:", result.user.uid);
+    return result.user;
+  } catch (error) {
+    console.error("[Auth] Sign-in failed:", error);
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Link anonymous account with email/password credential
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<User>}
+ */
+export async function linkAnonymousWithEmailPassword(email, password) {
+  if (!auth) initializeFirebase();
+
+  if (!currentUser || !currentUser.isAnonymous) {
+    throw new Error("현재 익명 계정이 아닙니다");
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(email, password);
+    const result = await linkWithCredential(currentUser, credential);
+    currentUser = result.user;
+    console.log("[Auth] Anonymous account linked:", result.user.uid);
+    return result.user;
+  } catch (error) {
+    console.error("[Auth] Link account failed:", error);
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Update user profile
+ * @param {Object} profile
+ * @param {string} [profile.displayName]
+ * @param {string} [profile.photoURL]
+ * @returns {Promise<void>}
+ */
+export async function updateUserProfile(profile) {
+  if (!auth) initializeFirebase();
+  if (!currentUser) {
+    throw new Error("인증된 사용자가 없습니다");
+  }
+
+  try {
+    await updateProfile(currentUser, profile);
+    console.log("[Auth] Profile updated");
+    // Reload user to get updated profile
+    await currentUser.reload();
+    currentUser = auth.currentUser;
+  } catch (error) {
+    console.error("[Auth] Update profile failed:", error);
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Handle Firebase Auth errors and convert to user-friendly messages
+ * @param {Error} error
+ * @returns {Error}
+ */
+function handleAuthError(error) {
+  const errorCode = error.code || error.message;
+  
+  const errorMessages = {
+    "auth/email-already-in-use": "이미 사용 중인 이메일입니다",
+    "auth/invalid-email": "올바른 이메일 형식이 아닙니다",
+    "auth/operation-not-allowed": "이 인증 방법이 활성화되지 않았습니다",
+    "auth/weak-password": "비밀번호가 너무 약합니다 (최소 6자)",
+    "auth/user-disabled": "이 계정은 비활성화되었습니다",
+    "auth/user-not-found": "계정을 찾을 수 없습니다",
+    "auth/wrong-password": "비밀번호가 올바르지 않습니다",
+    "auth/credential-already-in-use": "이 이메일은 이미 다른 계정에 연결되어 있습니다",
+    "auth/invalid-credential": "인증 정보가 올바르지 않습니다",
+    "auth/too-many-requests": "너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요",
+  };
+
+  const message = errorMessages[errorCode] || error.message || "인증 오류가 발생했습니다";
+  const friendlyError = new Error(message);
+  friendlyError.code = errorCode;
+  return friendlyError;
 }
 
 // ============================================================================

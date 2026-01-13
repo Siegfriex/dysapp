@@ -5,7 +5,7 @@
 
 import { initializeFirebase, ensureAuth, onAuthChange } from "../services/firebaseService.js";
 import { setToast as setErrorHandlerToast } from "../services/errorHandler.js";
-import { setLocalState, getLocalState } from "../utils/stateManager.js";
+import { setLocalState, getLocalState, removeLocalState } from "../utils/stateManager.js";
 
 // ============================================================================
 // Global App State
@@ -66,11 +66,32 @@ export async function initApp() {
     } else {
       console.log("[App] User not authenticated");
     }
+    // Dispatch auth changed event for other components (e.g., settings.js)
+    window.dispatchEvent(new CustomEvent("dysapp:authChanged", { 
+      detail: { user } 
+    }));
   });
 
-  // Ensure user is authenticated
+  // Ensure user is authenticated first
   try {
     await ensureAuth();
+    
+    // Check onboarding after auth is complete (user object is now available)
+    const shouldShowOnboarding = checkOnboardingNeeded();
+    
+    // Show onboarding modal if needed (after auth is ensured)
+    if (shouldShowOnboarding) {
+      // Delay to ensure UI is ready
+      setTimeout(async () => {
+        try {
+          const { showAuthModal } = await import('./auth.js');
+          showAuthModal('signup');
+        } catch (error) {
+          console.error('[App] Failed to load auth modal:', error);
+          toast.error('회원가입 모달을 불러올 수 없습니다.');
+        }
+      }, 1000);
+    }
   } catch (error) {
     console.error("[App] Auth failed:", error);
     
@@ -253,6 +274,42 @@ export function navigateToUpload() {
 }
 
 /**
+ * Logout and redirect to index page
+ * Standardized logout flow: sign out → show success toast → redirect to index.html
+ * Also sets a flag to prevent onboarding modal from showing immediately after logout
+ * 
+ * @returns {Promise<void>}
+ * 
+ * @example
+ * // In mypage.js or settings.js
+ * import { logoutAndRedirect } from './app.js';
+ * await logoutAndRedirect();
+ */
+export async function logoutAndRedirect() {
+  try {
+    const { signOut } = await import('../services/firebaseService.js');
+    await signOut();
+    
+    // Show success toast
+    toast.success('로그아웃되었습니다');
+    
+    // Set logout flag to prevent onboarding modal from showing immediately
+    setLocalState('recentLogout', true);
+    // Clear logout flag after 5 seconds (enough time for redirect)
+    setTimeout(() => {
+      removeLocalState('recentLogout');
+    }, 5000);
+    
+    // Redirect to index page (guest state)
+    window.location.href = './index.html';
+  } catch (error) {
+    console.error('[App] Logout failed:', error);
+    toast.error('로그아웃 중 오류가 발생했습니다');
+    throw error;
+  }
+}
+
+/**
  * Get URL parameter
  */
 export function getUrlParam(name) {
@@ -298,6 +355,45 @@ export function setActiveNavigation() {
       }
     }
   });
+}
+
+// ============================================================================
+// Onboarding Check
+// ============================================================================
+
+/**
+ * Check if user needs onboarding (signup)
+ * Returns true if user is anonymous and hasn't completed signup
+ * Now checks after auth is complete, and respects logout flag
+ */
+function checkOnboardingNeeded() {
+  // Check if user recently logged out - suppress onboarding in this case
+  const recentLogout = getLocalState('recentLogout');
+  if (recentLogout) {
+    console.log("[App] Recent logout detected, suppressing onboarding");
+    return false;
+  }
+  
+  // Check localStorage flag
+  const onboardingShown = getLocalState('onboardingShown');
+  if (onboardingShown) {
+    return false;
+  }
+  
+  // Check if user is anonymous (now user object is available after ensureAuth)
+  const user = window.dysapp?.user;
+  if (user && user.isAnonymous) {
+    // Check if user has email (already signed up)
+    if (user.email) {
+      setLocalState('onboardingShown', true);
+      return false;
+    }
+    // Anonymous user without email - show onboarding
+    return true;
+  }
+  
+  // Not anonymous or no user - no onboarding needed
+  return false;
 }
 
 // ============================================================================

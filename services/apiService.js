@@ -26,6 +26,7 @@ const FUNCTION_NAMES = {
   GET_USER_PROFILE: "getUserProfile",
   UPDATE_USER_PROFILE: "updateUserProfile",
   DELETE_ANALYSIS: "deleteAnalysis",
+  REGISTER_USER: "registerUser",
   HEALTH_CHECK: "healthCheck",
 };
 
@@ -350,6 +351,65 @@ export async function updateUserProfile(params) {
   return withErrorHandling(async () => {
     await ensureAuth();
     return callFunction(FUNCTION_NAMES.UPDATE_USER_PROFILE, params);
+  }, { showToast: true });
+}
+
+/**
+ * Register new user
+ * @param {Object} params
+ * @param {string} params.email
+ * @param {string} params.password
+ * @param {string} [params.displayName]
+ * @param {Object} params.privacyConsent
+ * @param {boolean} params.privacyConsent.consented
+ * @param {string} params.privacyConsent.version
+ * @param {string} [params.privacyConsent.ip]
+ * @returns {Promise<Object>}
+ */
+export async function registerUser(params) {
+  return withErrorHandling(async () => {
+    const { email, password, displayName, privacyConsent } = params;
+    
+    if (!email || !password) {
+      throw new Error("이메일과 비밀번호를 입력해주세요");
+    }
+    
+    if (!privacyConsent || !privacyConsent.consented) {
+      throw new Error("개인정보처리방침에 동의해주세요");
+    }
+    
+    // Check if user is anonymous
+    const { getCurrentUser } = await import("./firebaseService.js");
+    const user = getCurrentUser();
+    const isAnonymous = user && user.isAnonymous;
+    
+    if (isAnonymous) {
+      // Link anonymous account
+      const { linkAnonymousWithEmailPassword, updateUserProfile } = await import("./firebaseService.js");
+      await linkAnonymousWithEmailPassword(email, password);
+      
+      // Update display name if provided
+      if (displayName) {
+        await updateUserProfile({ displayName });
+      }
+    } else {
+      // Create new account
+      const { createUserWithEmailPassword, updateUserProfile } = await import("./firebaseService.js");
+      await createUserWithEmailPassword(email, password);
+      
+      // Update display name if provided
+      if (displayName) {
+        await updateUserProfile({ displayName });
+      }
+    }
+    
+    // Call backend to save profile and privacy consent
+    await ensureAuth();
+    return callFunction(FUNCTION_NAMES.REGISTER_USER, {
+      email,
+      displayName,
+      privacyConsent,
+    });
   }, { showToast: true });
 }
 

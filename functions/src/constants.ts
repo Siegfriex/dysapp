@@ -59,6 +59,9 @@ export const FIRESTORE_DATABASE_ID = "dysapp";
 /** Cloud Functions region */
 export const FUNCTIONS_REGION = "asia-northeast3";
 
+/** Vertex AI region (multimodalembedding@001 is only available in us-central1) */
+export const VERTEX_AI_REGION = "us-central1";
+
 /** Storage bucket */
 export const STORAGE_BUCKET = "dysapp1210.firebasestorage.app";
 
@@ -137,6 +140,13 @@ export const MEMORY = {
   CUSTOM_SEARCH: "512MiB",
   DEFAULT: "512MiB",
 } as const;
+
+// ============================================================================
+// Privacy Policy Version
+// ============================================================================
+
+/** Privacy policy version - update when 개인정보처리방침.txt changes */
+export const PRIVACY_POLICY_VERSION = "2026.01.13";
 
 // ============================================================================
 // Validation Limits

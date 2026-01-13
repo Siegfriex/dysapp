@@ -13,6 +13,7 @@ import {
   TIMEOUTS,
   MEMORY,
   LIMITS,
+  FIRESTORE_DATABASE_ID,
 } from "../constants";
 import {
   FormatPrediction,
@@ -22,7 +23,7 @@ import {
 import { checkRateLimit } from "../utils/rateLimiter";
 import { handleError } from "../utils/errorHandler";
 
-const db = getFirestore();
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 
 /**
  * Search designs by OCR text content

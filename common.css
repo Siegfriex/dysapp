@@ -285,6 +285,29 @@ body {
     filter: brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7492%) hue-rotate(260deg) brightness(95%) contrast(101%);
 }
 
+/* 로그인 버튼 스타일 */
+.nav-login-btn {
+    border: none;
+    margin: 1vw 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.nav-login-btn:hover {
+    opacity: 0.9;
+}
+
+.nav-login-btn svg {
+    stroke: currentColor;
+    color: inherit;
+}
+
 /* 마이페이지 아이콘 - 제거됨 (사이드바 내부 링크로 통합) */
 .mypageIcon {
     display: none; /* nav.html의 중복 버튼 제거로 인해 숨김 */

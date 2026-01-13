@@ -14,14 +14,15 @@ service cloud.firestore {
     }
 
     // Helper function to validate analysis document structure
-    function isValidAnalysis() {
-      let data = request.resource.data;
-      return data.keys().hasAll(['userId', 'fileName', 'imageUrl', 'formatPrediction',
-                                  'layer1Metrics', 'layer2Metrics', 'layer3Metrics',
-                                  'overallScore', 'fixScope']) &&
-             data.overallScore >= 0 && data.overallScore <= 100 &&
-             data.fixScope in ['StructureRebuild', 'DetailTuning'];
-    }
+    // Note: Currently unused but kept for future validation needs
+    // function isValidAnalysis() {
+    //   let data = request.resource.data;
+    //   return data.keys().hasAll(['userId', 'fileName', 'imageUrl', 'formatPrediction',
+    //                               'layer1Metrics', 'layer2Metrics', 'layer3Metrics',
+    //                               'overallScore', 'fixScope']) &&
+    //          data.overallScore >= 0 && data.overallScore <= 100 &&
+    //          data.fixScope in ['StructureRebuild', 'DetailTuning'];
+    // }
 
     // Analyses collection
     match /analyses/{analysisId} {
@@ -55,8 +56,22 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && 
+                      request.auth.uid == userId &&
+                      // Validate privacyConsent if provided (agreedAt is set by server, so only check consented and version)
+                      (!request.resource.data.keys().hasAny(['privacyConsent']) ||
+                       (request.resource.data.privacyConsent != null &&
+                        request.resource.data.privacyConsent.keys().hasAll(['consented', 'version']) &&
+                        request.resource.data.privacyConsent.consented == true &&
+                        request.resource.data.privacyConsent.version is string));
+      allow update: if isAuthenticated() && 
+                      request.auth.uid == userId &&
+                      // Validate privacyConsent if being updated (agreedAt is set by server)
+                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['privacyConsent']) ||
+                       (request.resource.data.privacyConsent != null &&
+                        request.resource.data.privacyConsent.keys().hasAll(['consented', 'version']) &&
+                        request.resource.data.privacyConsent.consented == true &&
+                        request.resource.data.privacyConsent.version is string));
       allow delete: if false; // Users cannot delete their own profile
     }
 

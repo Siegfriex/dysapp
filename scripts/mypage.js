@@ -14,15 +14,16 @@ import {
   adaptAnalysesResponse,
   FORMAT_LABELS,
 } from "../utils/dataAdapter.js";
-import { signOut, getCurrentUser } from "../services/firebaseService.js";
+import { getCurrentUser } from "../services/firebaseService.js";
 import {
   showLoading,
   hideLoading,
   toast,
   navigateToAnalysis,
   navigateToUpload,
+  logoutAndRedirect,
 } from "./app.js";
-import { onClick, registerCleanup } from "../utils/eventManager.js";
+import { onClick, onSubmit, registerCleanup } from "../utils/eventManager.js";
 
 // ============================================================================
 // State
@@ -169,6 +170,25 @@ function renderProfile() {
   const profile = userProfile;
   if (!profile) return;
 
+  // Check if user is anonymous/guest
+  const currentUser = getCurrentUser();
+  const isAnonymous = currentUser && currentUser.isAnonymous;
+  const isGuest = !profile.email || isAnonymous;
+
+  // Format contact info - show "미등록" instead of fake placeholder
+  const emailDisplay = profile.email || (isGuest ? "미등록" : "");
+  const phoneDisplay = profile.phoneNumber || (isGuest ? "미등록" : "");
+  
+  // Show guest badge if anonymous
+  const guestBadge = isGuest ? `
+    <div class="profile-guest-badge" style="margin-top: 0.5vw; padding: 0.5vw 1vw; background: var(--purpleA); border-radius: 0.5vw; font-size: var(--text-extra-small); color: var(--purpleMain);">
+      <span>게스트 사용자</span>
+      <button class="profile-signup-cta" style="margin-left: 0.5vw; background: var(--purpleMain); color: white; border: none; padding: 0.3vw 0.8vw; border-radius: 0.3vw; cursor: pointer; font-size: var(--text-extra-small);" onclick="(async () => { const { showAuthModal } = await import('./scripts/auth.js'); showAuthModal('signup'); })()">
+        회원가입하면 기록 유지
+      </button>
+    </div>
+  ` : '';
+
   profileSection.innerHTML = `
     <h3 class="profile-section-title">나의 정보</h3>
     <div class="profile-card">
@@ -191,10 +211,19 @@ function renderProfile() {
         <div class="profile-info">
           <h2 class="profile-name">${profile.displayName || "익명 사용자"}</h2>
           <div class="profile-contact-row">
-            <p class="profile-contact-item">${profile.email || "no-email@example.com"}</p>
-            <p class="profile-contact-item">${profile.phoneNumber || "010-0000-0000"}</p>
+            ${emailDisplay ? `<p class="profile-contact-item">${emailDisplay}</p>` : ''}
+            ${phoneDisplay ? `<p class="profile-contact-item">${phoneDisplay}</p>` : ''}
           </div>
           <div class="profile-badge">${profile.jobTitle || "STUDENT"}</div>
+          ${guestBadge}
+          ${profile.privacyConsent && profile.privacyConsent.consented ? `
+          <div class="profile-privacy-badge" title="개인정보처리방침 동의 완료 (버전: ${profile.privacyConsent.version})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>개인정보 동의 완료</span>
+          </div>
+          ` : ''}
         </div>
       </div>
     </div>
@@ -401,6 +430,11 @@ function handleTabClick(tab) {
  * Open profile editor modal - Updated to match 53.png design
  */
 function openProfileEditor() {
+  // Check if user is anonymous/guest
+  const currentUser = getCurrentUser();
+  const isAnonymous = currentUser && currentUser.isAnonymous;
+  const isGuest = !userProfile?.email || isAnonymous;
+
   // Create modal
   const modal = document.createElement("div");
   modal.className = "profile-modal";
@@ -453,12 +487,18 @@ function openProfileEditor() {
             
             <!-- Action Buttons -->
             <div class="profile-modal-actions">
+              ${isGuest ? `
+              <button type="button" class="profile-modal-action-btn" id="createAccountBtn">
+                계정 만들기 (기록 유지)
+              </button>
+              ` : `
               <button type="button" class="profile-modal-action-btn" id="changePasswordBtn">
                 비밀번호 변경
               </button>
               <button type="button" class="profile-modal-action-btn" id="addAccountBtn">
                 계정 추가
               </button>
+              `}
               <button type="button" class="profile-modal-action-btn" id="logoutBtn">
                 로그아웃
               </button>
@@ -476,52 +516,149 @@ function openProfileEditor() {
 
   document.body.appendChild(modal);
 
-  // Event handlers
+  // Animate in
+  requestAnimationFrame(() => {
+    modal.classList.add('show');
+  });
+
+  // Event handlers with cleanup tracking
+  const modalUnsubscribeFunctions = [];
+
+  // Close button
   const closeBtn = modal.querySelector(".profile-modal-close");
-  closeBtn?.addEventListener("click", () => {
-    modal.remove();
-  });
+  if (closeBtn) {
+    const unsub = onClick(closeBtn, () => {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.remove();
+        }
+      }, 300);
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
 
+  // Handle create account button (for guest users)
+  const createAccountBtn = modal.querySelector("#createAccountBtn");
+  if (createAccountBtn) {
+    const unsub = onClick(createAccountBtn, async () => {
+      modal.classList.remove('show');
+      setTimeout(async () => {
+        if (modal.parentNode) {
+          modal.remove();
+        }
+        try {
+          const { showAuthModal } = await import('./auth.js');
+          showAuthModal('signup');
+        } catch (error) {
+          console.error('[MyPage] Failed to load auth modal:', error);
+          toast.error('인증 모달을 불러올 수 없습니다.');
+        }
+      }, 300);
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
+
+  // Handle change password button (for registered users)
   const changePasswordBtn = modal.querySelector("#changePasswordBtn");
-  changePasswordBtn?.addEventListener("click", () => {
-    toast.info("비밀번호 변경 기능은 준비 중입니다");
-  });
+  if (changePasswordBtn) {
+    const unsub = onClick(changePasswordBtn, () => {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.remove();
+        }
+        window.location.href = './settings.html#account';
+      }, 300);
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
 
+  // Handle add account button (for registered users)
   const addAccountBtn = modal.querySelector("#addAccountBtn");
-  addAccountBtn?.addEventListener("click", () => {
-    toast.info("계정 추가 기능은 준비 중입니다");
-  });
+  if (addAccountBtn) {
+    const unsub = onClick(addAccountBtn, () => {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.remove();
+        }
+        window.location.href = './settings.html#account';
+      }, 300);
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
 
+  // Logout button
   const logoutBtn = modal.querySelector("#logoutBtn");
-  logoutBtn?.addEventListener("click", async () => {
-    if (confirm("로그아웃 하시겠습니까?")) {
-      try {
-        await signOut();
-        toast.success("로그아웃되었습니다");
-        modal.remove();
-        navigateToUpload();
-      } catch (error) {
-        toast.error("로그아웃에 실패했습니다");
+  if (logoutBtn) {
+    const unsub = onClick(logoutBtn, async () => {
+      if (confirm("로그아웃 하시겠습니까?")) {
+        try {
+          modal.classList.remove('show');
+          setTimeout(() => {
+            if (modal.parentNode) {
+              modal.remove();
+            }
+          }, 300);
+          // Use standardized logout function
+          await logoutAndRedirect();
+        } catch (error) {
+          toast.error("로그아웃에 실패했습니다");
+        }
       }
-    }
-  });
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
 
-  modal.querySelector(".profile-modal-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const displayName = modal.querySelector("#profileDisplayName")?.value?.trim();
+  // Form submit
+  const form = modal.querySelector(".profile-modal-form");
+  if (form) {
+    const unsub = onSubmit(form, async (e) => {
+      e.preventDefault();
+      const displayName = modal.querySelector("#profileDisplayName")?.value?.trim();
 
-    try {
-      await updateUserProfile({ displayName });
-      toast.success("프로필이 수정되었습니다");
-      modal.remove();
-      loadUserProfile();
-    } catch (error) {
-      toast.error("프로필 수정에 실패했습니다");
-    }
-  });
+      try {
+        await updateUserProfile({ displayName });
+        toast.success("프로필이 수정되었습니다");
+        modal.classList.remove('show');
+        setTimeout(() => {
+          if (modal.parentNode) {
+            modal.remove();
+          }
+        }, 300);
+        loadUserProfile();
+      } catch (error) {
+        toast.error("프로필 수정에 실패했습니다");
+      }
+    });
+    modalUnsubscribeFunctions.push(unsub);
+  }
 
-  modal.addEventListener("click", (e) => {
+  // Modal backdrop click
+  const unsubBackdrop = onClick(modal, (e) => {
     if (e.target === modal) {
+      modal.classList.remove('show');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.remove();
+        }
+      }, 300);
+    }
+  });
+  modalUnsubscribeFunctions.push(unsubBackdrop);
+
+  // Cleanup 등록
+  registerCleanup(() => {
+    modalUnsubscribeFunctions.forEach((unsub) => {
+      try {
+        unsub();
+      } catch (error) {
+        console.error('[MyPage] Error during modal cleanup:', error);
+      }
+    });
+    modalUnsubscribeFunctions.length = 0;
+    if (modal.parentNode) {
       modal.remove();
     }
   });
@@ -576,6 +713,7 @@ async function handleDelete(analysisId) {
 
 /**
  * Handle sign out
+ * @deprecated Use logoutAndRedirect from app.js instead
  */
 async function handleSignOut() {
   if (!confirm("로그아웃 하시겠습니까?")) {
@@ -583,9 +721,7 @@ async function handleSignOut() {
   }
 
   try {
-    await signOut();
-    toast.success("로그아웃되었습니다");
-    navigateToUpload();
+    await logoutAndRedirect();
   } catch (error) {
     toast.error("로그아웃에 실패했습니다");
   }
@@ -827,6 +963,26 @@ const mypageStyles = `
   margin-top: 0.5vw;
   text-align: center;
   line-height: 1.2;
+}
+
+.profile-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5vw;
+  background: var(--purpleGy);
+  color: var(--purpleMain);
+  font-size: var(--text-extra-small);
+  font-weight: 500;
+  padding: 0.5vw 1vw;
+  border-radius: 0.5vw;
+  margin-top: 0.5vw;
+  margin-left: 0.5vw;
+}
+
+.profile-privacy-badge svg {
+  flex-shrink: 0;
+  width: 1vw;
+  height: 1vw;
 }
 
 /* ============================================================================
@@ -1238,51 +1394,73 @@ const mypageStyles = `
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(27, 18, 51, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-smooth);
   backdrop-filter: blur(0.2vw);
-  animation: fadeInUp 0.3s var(--ease-smooth);
+}
+
+.profile-modal.show {
+  opacity: 1;
 }
 
 .profile-modal-content {
   background: white;
-  border-radius: 2vw;
+  border-radius: 1vw;
   width: 90%;
   max-width: 55vw;
-  box-shadow: 0 0 2vw rgba(135, 92, 255, 0.1);
-  border: none;
+  max-height: 90vh;
   overflow: hidden;
-  animation: fadeInUp 0.3s var(--ease-smooth);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+  transform: scale(0.95);
+  transition: transform 0.3s var(--ease-smooth);
+}
+
+.profile-modal.show .profile-modal-content {
+  transform: scale(1);
 }
 
 /* Modal Header */
 .profile-modal-header {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 2vw;
-  border-bottom: none;
+  justify-content: space-between;
+  padding: 2.5vw;
+  border-bottom: 1px solid var(--purpleGy);
   background: white;
   position: relative;
 }
 
 .profile-modal-title {
-  font-size: 1.2vw;
-  font-weight: 600;
-  color: var(--purpleMain);
+  font-size: var(--text-large);
+  font-weight: 700;
+  color: var(--navy);
   margin: 0;
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
 }
 
 .profile-modal-close {
   position: absolute;
-  right: 2vw;
-  background: transparent;
+  right: 2.5vw;
+  background: none;
   border: none;
   cursor: pointer;
   padding: 0.5vw;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s var(--ease-smooth);
+}
+
+.profile-modal-close:hover {
   color: var(--purpleMain);
 }
 
@@ -1290,7 +1468,9 @@ const mypageStyles = `
 .profile-modal-body {
   display: flex;
   gap: 3vw;
-  padding: 3vw 4vw;
+  padding: 2.5vw;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .profile-modal-image-section {
@@ -1334,10 +1514,22 @@ const mypageStyles = `
   padding: 1vw 1.2vw;
   border-radius: 0.5vw;
   background: white;
-  border: 1px solid #E0E0E0;
-  font-size: 1vw;
+  border: 1px solid var(--purpleGy);
+  font-size: var(--text-small);
   color: var(--navy);
+  font-family: 'SUITE', 'Rubik', sans-serif;
+  transition: all var(--ease-smooth) 0.2s;
   margin-top: 0.5vw;
+}
+
+.profile-modal-input:hover {
+  border-color: var(--purpleF);
+}
+
+.profile-modal-input:focus {
+  outline: none;
+  border-color: var(--purpleMain);
+  box-shadow: 0 0 0 0.2vw rgba(135, 92, 255, 0.1);
 }
 
 .profile-modal-actions {
@@ -1355,12 +1547,13 @@ const mypageStyles = `
   background: white;
   border: none;
   border-bottom: 1px solid #EEE;
-  font-size: 0.95vw;
+  font-size: var(--text-small);
   font-weight: 500;
   color: var(--purpleMain);
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s;
+  transition: all var(--ease-smooth) 0.2s;
+  font-family: 'SUITE', 'Rubik', sans-serif;
 }
 
 .profile-modal-action-btn:last-child {
@@ -1374,29 +1567,35 @@ const mypageStyles = `
 
 /* Footer Center Button */
 .profile-modal-footer {
-  padding: 2vw;
+  padding: 2.5vw;
   background: white;
   display: flex;
   justify-content: center;
-  border-top: none;
+  border-top: 1px solid var(--purpleGy);
 }
 
 .profile-modal-save-btn {
-  width: auto;
-  min-width: 6vw;
-  padding: 0.8vw 2.5vw;
-  background: #EBEBF8; /* Light purple bg */
-  color: var(--purpleMain);
+  width: 100%;
+  padding: 1.2vw 0;
+  background: var(--purpleMain);
+  color: white;
+  border: none;
   border-radius: 0.5vw;
-  font-size: 1vw;
+  font-size: var(--text-small);
   font-weight: 600;
-  box-shadow: none;
+  cursor: pointer;
+  transition: all var(--ease-smooth) 0.2s;
+  font-family: 'SUITE', 'Rubik', sans-serif;
 }
 
 .profile-modal-save-btn:hover {
-  background: var(--purpleMain);
-  color: white;
-  transform: none;
+  background: var(--purpleD);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-modal-save-btn:active {
+  transform: translateY(0);
 }
 
 /* ============================================================================
@@ -1492,6 +1691,18 @@ const mypageStyles = `
     font-size: 2.5vw;
     padding: 1vw 2vw;
     margin: 1vw auto 0;
+  }
+  
+  .profile-privacy-badge {
+    font-size: 2vw;
+    padding: 1vw 2vw;
+    margin-top: 1vw;
+    gap: 1vw;
+  }
+  
+  .profile-privacy-badge svg {
+    width: 3vw;
+    height: 3vw;
   }
   
   .profile-contact-item {

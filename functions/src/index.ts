@@ -9,12 +9,14 @@
 
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { FIRESTORE_DATABASE_ID } from "./constants";
 
 // Initialize Firebase Admin
 initializeApp();
 
 // Configure Firestore settings
-const db = getFirestore();
+// Use 'dysapp' database (nam5 region) instead of default
+const db = getFirestore(FIRESTORE_DATABASE_ID);
 db.settings({
   ignoreUndefinedProperties: true,
 });
@@ -43,6 +45,7 @@ export {
   updateUserProfile,
   getAnalysis,
   deleteAnalysis,
+  registerUser,
 } from "./user/profileFunctions";
 
 // ============================================================================

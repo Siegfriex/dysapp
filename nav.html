@@ -78,13 +78,6 @@
                         <img src="./img/mypage.svg" style="width: 1.3vw;" alt="마이페이지">
                     </a>
                 </li>
-                
-                <!-- 알림 탭: 현재 미구현 (빈 링크) -->
-                <li>
-                    <a href="" aria-label="알림 (준비 중)">
-                        <img src="./img/alertTab.svg" style="width: 1.3vw;" alt="알림">
-                    </a>
-                </li>
             </ul>
 
             <!-- =========================================
@@ -98,11 +91,64 @@
                     <img src="./img/suscribeTab.svg" style="width: 0.8vw;" alt="구독">
                 </a>
                 
+                <!-- 로그인 버튼: 인증되지 않은 사용자에게만 표시 -->
+                <button id="navLoginBtn" class="nav-link nav-login-btn" aria-label="로그인" style="display: none;">
+                    <svg style="width: 1.3vw; height: 1.3vw;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                </button>
+                
                 <!-- 설정 페이지: 사용자 환경 설정 -->
                 <a href="./settings.html" class="nav-link" aria-label="설정 페이지">
                     <img src="./img/setting.svg" style="width: 1.3vw;" alt="설정">
                 </a>
             </div>
+            
+            <script type="module">
+                // 로그인 버튼 표시/숨김 처리
+                async function updateNavLoginButton() {
+                    const loginBtn = document.getElementById('navLoginBtn');
+                    if (!loginBtn) return;
+                    
+                    try {
+                        // app.js가 초기화될 때까지 대기
+                        if (!window.dysapp?.initialized) {
+                            window.addEventListener('dysapp:ready', updateNavLoginButton, { once: true });
+                            return;
+                        }
+                        
+                        const user = window.dysapp?.user;
+                        const isAuthenticated = user && !user.isAnonymous;
+                        
+                        // 인증되지 않은 사용자에게만 로그인 버튼 표시
+                        if (isAuthenticated) {
+                            loginBtn.style.display = 'none';
+                        } else {
+                            loginBtn.style.display = 'flex';
+                        }
+                    } catch (error) {
+                        console.error('[Nav] Error updating login button:', error);
+                    }
+                }
+                
+                // 인증 상태 변경 시 업데이트
+                window.addEventListener('dysapp:authChanged', updateNavLoginButton);
+                
+                // 초기 로드 시 업데이트
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', updateNavLoginButton);
+                } else {
+                    updateNavLoginButton();
+                }
+                
+                // 로그인 버튼 클릭 이벤트
+                document.getElementById('navLoginBtn')?.addEventListener('click', async () => {
+                    const { showAuthModal } = await import('./scripts/auth.js');
+                    showAuthModal('login');
+                });
+            </script>
         </nav>
     </div>
 </body>
