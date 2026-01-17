@@ -774,7 +774,7 @@ const mypageStyles = `
 .mypage_main {
   width: 100%; /* .wrap이 이미 margin-left를 가지고 있으므로 100% 사용 */
   min-height: 100vh;
-  padding: 7.84vw 7.84vw 0 7.84vw; /* SVG: y=150.5 -> 150.5/1920 = 7.84vw */
+  padding: 5.84vw 6.84vw 0 3.84vw; /* SVG: y=150.5 -> 150.5/1920 = 7.84vw  -> 수정*/
   background: var(--background);
   margin-left: 0; /* .wrap의 margin-left 사용 */
   box-sizing: border-box;
@@ -791,17 +791,17 @@ const mypageStyles = `
 /* 2단 레이아웃 - SVG 정확한 비율 */
 .mypage-layout {
   display: flex;
-  gap: 4.19vw; /* SVG: 좌측 Bento Grid 끝 150.5+739=889.5px, 우측 Gallery Grid 첫 카드 시작 970px, 차이 80.5px -> 80.5/1920 = 4.19vw */
+  gap: 2.19vw; /* SVG: 좌측 Bento Grid 끝 150.5+739=889.5px, 우측 Gallery Grid 첫 카드 시작 970px, 차이 80.5px -> 80.5/1920 = 4.19vw */
   align-items: flex-start;
   margin-top: 0;
 }
 
 .left-column {
-  flex: 0 0 38.49%; /* SVG: 프로필 카드 460 + 포스터 739 = 1199px, 하지만 좌측은 약 610px -> 31.77vw, 여유있게 38.49% */
+  flex: 0 0 45.49%; /* SVG: 프로필 카드 460 + 포스터 739 = 1199px, 하지만 좌측은 약 610px -> 31.77vw, 여유있게 38.49% */
   display: flex;
   flex-direction: column;
-  gap: 3.51vw; /* SVG: 529.5-455.5 = 74px -> 3.85vw, 간격은 약 3.51vw */
-  max-width: 38.49vw; /* 최대 너비 제한 */
+  gap: 2.51vw; /* SVG: 529.5-455.5 = 74px -> 3.85vw, 간격은 약 3.51vw */
+  max-width: 45.49vw; /* 최대 너비 제한 */
 }
 
 .right-column {
@@ -819,10 +819,10 @@ const mypageStyles = `
 
 /* "나의 정보" 제목 - SVG: x=166.76, y=118.024 */
 .profile-section-title {
-  font-size: var(--text-medium);
+  font-size: var(--text-small);
   font-weight: 700;
   color: #875CFF; /* SVG: fill="#875CFF" */
-  margin: 0 0 1.54vw 0; /* SVG: y=118.024, 카드 y=150.5, 차이 32.476px -> 1.69vw */
+  margin: 0 0 1vw 0; /* SVG: y=118.024, 카드 y=150.5, 차이 32.476px -> 1.69vw */
   letter-spacing: -0.02em;
   line-height: var(--line-height-tight);
 }
@@ -830,8 +830,8 @@ const mypageStyles = `
 /* 프로필 카드 - SVG: x=150.5, y=150.5, width=460, height=305, rx=10.5 */
 .profile-card {
   position: relative;
-  width: 23.96vw; /* 460/1920 */
-  min-height: 15.89vw; /* 305/1920 (비율 유지) */
+  width: 20.96vw; /* 460/1920  23.96 ->20.96*/
+  min-height: 12.89vw; /* 305/1920 (비율 유지) */
   padding: 1.54vw; /* SVG: 아바타 offset 29.5px -> 1.54vw */
   background: white;
   border-radius: 0.547vw; /* 10.5/1920 */
@@ -869,6 +869,7 @@ const mypageStyles = `
   align-items: center;
   justify-content: center;
   position: relative;
+  box-shadow: 0 0vw 0.8vw #875cff6e;
 }
 
 .profile-image {
@@ -920,16 +921,16 @@ const mypageStyles = `
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5vw;
+  // gap: 0.5vw;
   justify-content: center;
   padding-top: 0;
 }
 
 .profile-name {
-  font-size: var(--text-large);
+  font-size: var(--text-small);
   font-weight: 700;
   color: var(--navy);
-  margin: 0 0 0.3vw 0;
+  margin: 0 0 0vw 0;
   letter-spacing: -0.02em;
   line-height: var(--line-height-tight);
 }
@@ -942,7 +943,7 @@ const mypageStyles = `
 }
 
 .profile-contact-item {
-  font-size: var(--text-small);
+  font-size: var(--text-tiny);
   color: #666;
   margin: 0;
   line-height: var(--line-height-base);
@@ -955,7 +956,7 @@ const mypageStyles = `
   color: white;
   font-size: var(--text-extra-small);
   font-weight: 600;
-  padding: 0.78vw 2.14vw; /* SVG: height=30 -> 1.56vw, width=82 -> 4.27vw, 패딩은 약간 조정 */
+  padding: 0.38vw 0.34vw; /* SVG: height=30 -> 1.56vw, width=82 -> 4.27vw, 패딩은 약간 조정 */
   border-radius: 0.208vw; /* 4/1920 */
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -976,7 +977,7 @@ const mypageStyles = `
   padding: 0.5vw 1vw;
   border-radius: 0.5vw;
   margin-top: 0.5vw;
-  margin-left: 0.5vw;
+  // margin-left: 0.5vw;
 }
 
 .profile-privacy-badge svg {
@@ -993,13 +994,34 @@ const mypageStyles = `
   width: 100%;
 }
 
+.portfolio-titwrap{
+  margin-bottom: 1.2vw;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 1vw;
+}
+
 .portfolio-title {
-  font-size: var(--text-medium);
+  font-size: var(--text-small);
   font-weight: 700;
   color: var(--navy);
-  margin-bottom: 1.2vw;
   letter-spacing: -0.02em;
   line-height: var(--line-height-tight);
+}
+
+.portfolio-edit {
+  margin-left: 28vw;
+  border: none;
+  background: none;
+}
+
+.portfolio-fixpin{
+  height: 0.9vw;
+}
+
+.portfolio-editimg{
+  width:0.9vw;
 }
 
 /* 주 그래픽 포스터 카드 - SVG: x=150.5, y=529.5, width=739, height=514, rx=11.5, stroke="#C291FF" */
@@ -1013,11 +1035,11 @@ const mypageStyles = `
     "main sub2";
   background: white;
   border-radius: 0.599vw; /* 11.5/1920 */
-  padding: 1.2vw;
+  // padding: 1.2vw;
   border: 1px solid #C291FF; /* SVG: stroke="#C291FF" */
   box-shadow: none;
   width: 100%; /* 부모 컨테이너에 맞춤 */
-  min-height: 26.77vw; /* 514/1920 (비율 유지) */
+  min-height: 24.77vw; /* 514/1920 (비율 유지) */
 }
 
 .bento-item {
@@ -1148,6 +1170,11 @@ const mypageStyles = `
   padding: 3vw;
   text-align: center;
   color: var(--purpleC);
+  margin:1vw;
+}
+
+.empty-portfolio p{
+  font-size:var(--text-small);
 }
 
 /* ============================================================================
@@ -1159,11 +1186,11 @@ const mypageStyles = `
 }
 
 .gallery-header {
-  margin-bottom: 1vw;
+  // margin-bottom: 1vw;
 }
 
 .gallery-title {
-  font-size: var(--text-medium);
+  font-size: var(--text-small);
   font-weight: 700;
   color: var(--navy);
   margin-bottom: 1.2vw;
@@ -1176,7 +1203,7 @@ const mypageStyles = `
   display: flex;
   gap: 0;
   background: transparent;
-  border-bottom: 2px solid var(--purpleGy);
+  border-bottom: 2px solid white;
   padding: 0;
   margin-bottom: 0;
 }
@@ -1184,7 +1211,8 @@ const mypageStyles = `
 .gallery-tab {
   padding: 0.7vw 1.8vw;
   background: transparent;
-  border: none;
+  // border: none;
+   border: 1px solid transparent;
   border-bottom: 2px solid transparent;
   color: var(--purpleC);
   font-size: var(--text-small);
@@ -1202,21 +1230,30 @@ const mypageStyles = `
 
 .gallery-tab.active {
   color: var(--purpleMain);
-  border-bottom-color: var(--purpleMain);
+  border-bottom-color: var(--background);
+  border-top-color: #C291FF;
+  border-left-color: #C291FF;
+  border-right-color: #C291FF;
+  border-top-left-radius:0.573vw;
+  border-top-right-radius:0.573vw;
   background: transparent;
 }
 
 /* 스타일 갤러리 컨테이너 - SVG: x=940, y=110, width=938, height=991 */
 .gallery-grid {
   background: white;
-  border-radius: 0.573vw; /* 11/1920 */
+  // border-radius: 0.573vw; /* 11/1920 */
   padding: 1.5vw;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.2vw;
   box-shadow: none;
   border: 1px solid #C291FF; /* SVG: Bento Grid와 동일한 색상 및 굵기 */
-  margin-top: 1vw;
+  // box-shadow: 0 0vw 0.2vw var(--purpleMain);
+  border-bottom-left-radius:0.573vw;
+  border-bottom-right-radius:0.573vw;
+  border-top-right-radius:0.573vw;
+  margin-top: -1.5px;
   min-height: 51.61vw; /* 991/1920 (비율 유지) */
   width: 100%; /* 부모 컨테이너에 맞춤 */
 }
